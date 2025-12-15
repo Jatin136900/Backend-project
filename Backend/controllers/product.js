@@ -9,7 +9,7 @@ export async function addProduct(req, res) {
     try {
         const newRecord = req.body;
         if (req.file) {
-            newRecord.img = req.file.path;
+            newRecord.img = req.file.path.replace("\\", "/")    ;
         }
         const product = new Product(newRecord);
         await product.save();

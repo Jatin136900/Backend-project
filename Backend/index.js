@@ -17,6 +17,10 @@ app.use(express.json());
 await connectToDB();
 
 
+
+app.use("/uploads", express.static("uploads"));
+
+
 app.use(
     cors({
         origin: "http://localhost:5173",
@@ -33,7 +37,7 @@ app.use("/api/auth", authRoutes);
 
 app.use("/admin", adminRoutes)
 
-app.use("/check",checkRouter)
+app.use("/check", checkRouter)
 
 
 app.listen(3000, () => console.log("Server started at port 3000"));
