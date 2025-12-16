@@ -1,11 +1,29 @@
 import { PiCurrencyInrLight } from "react-icons/pi";
+import { useState } from "react";
 
 function ProductCard({ product }) {
   if (!product) return null;
 
+  const [adding, setAdding] = useState(false);
+
+  function handleAddToCart() {
+    if (adding) return;
+
+    setAdding(true);
+
+    // 🔥 future API call yahin lagegi
+    setTimeout(() => {
+      setAdding(false);
+    }, 3000);
+
+
+
+    
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-md p-5 hover:shadow-xl transition duration-300">
-      
+
       {/* IMAGE */}
       <div className="flex justify-center">
         <img
@@ -41,14 +59,17 @@ function ProductCard({ product }) {
 
       {/* BUTTON */}
       <button
-        className="
+        onClick={handleAddToCart}
+        disabled={adding}
+        className={`
           mt-4 w-full py-2 rounded-xl
-          bg-gradient-to-r from-orange-500 to-orange-600
+          bg-amber-700
           text-white font-medium
-          hover:opacity-90 transition
-        "
+          transition
+          ${adding ? "opacity-70 cursor-not-allowed" : "hover:opacity-90"}
+        `}
       >
-        Add to Cart
+        {adding ? "Adding..." : "Add to Cart"}
       </button>
     </div>
   );

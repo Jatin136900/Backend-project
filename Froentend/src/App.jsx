@@ -8,6 +8,8 @@ import Dashboard from "./admin/pages/Dashboard";
 import AdminLogin from "./Admin/pages/AdminLogin";
 import Users from './Admin/pages/Users'
 import Settings from "./Admin/pages/Settings";
+import Product from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
 
 
 const router = createBrowserRouter([
@@ -42,7 +44,15 @@ const router = createBrowserRouter([
       {
         path: "admin/settings",
         element: <Settings />
-      }
+      },
+      {
+        path: "product",
+        element: <Product />
+      },
+      {
+        path: "/product/:slug",
+        element: <ProductDetail />
+      },
 
     ]
   }

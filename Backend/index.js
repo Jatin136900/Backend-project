@@ -7,6 +7,8 @@ import authRoutes from "./routes/authRoutes.js";
 import cors from "cors"
 import adminRoutes from './routes/Admin.js'
 import checkRouter from "./routes/check.js";
+import cartRouter from "./routes/cart.js";
+import cookieParser from "cookie-parser";
 
 
 
@@ -18,7 +20,7 @@ await connectToDB();
 
 
 
-app.use("/uploads", express.static("uploads"));
+
 
 
 app.use(
@@ -29,6 +31,8 @@ app.use(
 );
 
 
+app.use(cookieParser());
+
 // app.use("/", router)
 
 app.use("/product", productRouter);
@@ -38,6 +42,11 @@ app.use("/api/auth", authRoutes);
 app.use("/admin", adminRoutes)
 
 app.use("/check", checkRouter)
+
+app.use("/uploads", express.static("uploads"));
+
+app.use('/cart', cartRouter)
+
 
 
 app.listen(3000, () => console.log("Server started at port 3000"));
