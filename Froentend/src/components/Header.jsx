@@ -14,6 +14,8 @@ function Header() {
   const navigate = useNavigate(); // ✅ ADDED
 
   const { cartCount } = useAuth(); // ✅ ADDED
+  const { logout } = useAuth();
+
 
   const linkClass = ({ isActive }) =>
     isActive
@@ -85,7 +87,7 @@ function Header() {
               </Link>
 
               {/* LOGOUT */}
-              <Link
+              {/* <Link
                 to="/login"
                 className="cursor-pointer hover:text-red-500 transition"
                 onClick={(e) => {
@@ -94,7 +96,25 @@ function Header() {
                 }}
               >
                 <IoMdLogOut />
+              </Link> */}
+
+              <Link
+                to="/login"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  setLoading(true);
+
+                  await logout(); // 🔥 BACKEND + GLOBAL RESET
+
+                  setTimeout(() => {
+                    setLoading(false);
+                    navigate("/login");
+                  }, 2000);
+                }}
+              >
+                <IoMdLogOut />
               </Link>
+
             </div>
           </nav>
 
@@ -145,7 +165,18 @@ function Header() {
               <FaUser onClick={() => delayedNavigate("/login")} />
               <FaShoppingCart onClick={() => delayedNavigate("/cart")} />
               <RiAdminFill onClick={() => delayedNavigate("/admin/admin/login")} />
-              <IoMdLogOut onClick={() => delayedNavigate("/login")} />
+              {/* <IoMdLogOut onClick={() => delayedNavigate("/login")} /> */}
+              <IoMdLogOut
+                onClick={async () => {
+                  setLoading(true);
+                  await logout();
+                  setTimeout(() => {
+                    setLoading(false);
+                    navigate("/login");
+                  }, 2000);
+                }}
+              />
+
             </div>
           </nav>
         </div>

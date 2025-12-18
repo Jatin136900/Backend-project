@@ -62,19 +62,37 @@ export async function loginUsers(req, res) {
 }
 
 
+// export async function logoutUsers(req, res) {
+//     try {
+//         res.clearCookie("auth_token", {
+//             httpOnly: true,
+//             secure: true,
+//             sameSite: "none",
+//             maxAge: -1
+//         });
+//         return res.status(200).json({ message: "User Logout successful" });
+//     } catch (error) {
+//         return res.status(500).json({ message: error.message });
+//     }
+// }
+
+
 export async function logoutUsers(req, res) {
     try {
         res.clearCookie("auth_token", {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            maxAge: -1
+            secure: false,      // ✅ SAME AS LOGIN
+            sameSite: "lax"     // ✅ SAME AS LOGIN
         });
-        return res.status(200).json({ message: "User Logout successful" });
+
+        return res.status(200).json({
+            message: "User Logout successful"
+        });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
 }
+
 
 export async function registerUser(req, res) {
     try {

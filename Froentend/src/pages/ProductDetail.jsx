@@ -7,6 +7,7 @@ const ProductDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
+  const { updateCartCount } = useAuth();
 
 
 
@@ -72,10 +73,49 @@ const ProductDetail = () => {
   //   }
   // }
 
+  // async function handleAddToCart() {
+  //   try {
+
+  //     // ✅ ADD: CHECK PRODUCT ALREADY IN CART
+  //     const cartRes = await instance.get("/cart", {
+  //       withCredentials: true,
+  //     });
+
+  //     const alreadyAdded = cartRes.data.products.find(
+  //       (item) => item.productId._id === product._id
+  //     );
+
+  //     if (alreadyAdded) {
+  //       alert("You have already added this product");
+  //       return;
+  //     }
+
+  //     // ✅ ORIGINAL CODE (unchanged)
+  //     await instance.post("/cart/add", {
+  //       productId: product._id,
+  //       qty: qty,
+  //     });
+
+  //     // ✅ ALREADY PRESENT (KEEP)
+  //     increaseCart(qty);
+
+  //     // 🔥 ADD THIS (backend + context sync)
+  //     updateCartCount("add", qty);
+
+  //     navigate("/Product/" + slug);
+
+  //   } catch (err) {
+  //     if (err.response?.status === 401) {
+  //       navigate("/login", {
+  //         state: { redirectTo: "/Product/" + slug },
+  //       });
+  //     }
+  //   }
+  // }
+
+
   async function handleAddToCart() {
     try {
-
-      // ✅ ADD: CHECK PRODUCT ALREADY IN CART
       const cartRes = await instance.get("/cart", {
         withCredentials: true,
       });
@@ -89,13 +129,13 @@ const ProductDetail = () => {
         return;
       }
 
-      // ✅ ORIGINAL CODE (unchanged)
       await instance.post("/cart/add", {
         productId: product._id,
         qty: qty,
       });
 
-      increaseCart(qty);
+      // ✅ ONLY THIS (ONE SOURCE)
+      updateCartCount("add", qty);
 
       navigate("/Product/" + slug);
 
