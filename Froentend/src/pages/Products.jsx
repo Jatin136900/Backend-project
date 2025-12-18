@@ -33,8 +33,8 @@ const Product = () => {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen px-6 py-10">
-      
+    <>    <div className="bg-gray-50 min-h-screen px-6 py-10">
+
       {/* HEADING */}
       <h1 className="text-3xl font-bold text-gray-800 mb-10 text-center">
         Our Products
@@ -58,9 +58,13 @@ const Product = () => {
           >
             <ProductCard product={product} />
           </Link>
+
         ))}
       </div>
     </div>
+
+    </>
+
   );
 };
 

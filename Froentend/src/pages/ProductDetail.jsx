@@ -41,45 +41,30 @@ const ProductDetail = () => {
   /* ======================
      ADD TO CART
   ====================== */
-  async function handleAddToCart(productId) {
-    // // ❌ User not logged in
-    // if (!isLoggedIn && !document.cookie) {
-    //   navigate("/login", {
-    //     state: { redirectTo: `/product/${slug}` }
-    //   });
-    //   return;
-    // }
-
-    // // ✅ User logged in
-    // try {
-    //   await instance.post(
-    //     "/cart/add",
-    //     {
-    //       productId: product._id,
-    //       quantity: qty
-    //     },
-    //     { withCredentials: true }
-    //   );
-
-    //   alert("Product added to cart 🛒");
-    // } catch (err) {
-    //   console.error(err);
-    //   alert("Failed to add to cart");
 
 
-    if (!isLoggedIn) navigate('/login');
-    else {
-      const response = await instance.post(
-        "/cart/add",
-        {
-          productId: product._id, quantity: 1
-        },
-        { withCredentials: true }
-      );
-      console.log(response);
+
+  async function handleAddToCart() {
+
+    try {
+      await instance.post("/cart/add", {
+        productId: product._id,
+        qty: qty,
+      });
+
+      // navigate("/cart");
+      navigate("/Product/" + slug);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate("/login", {
+          state: { redirectTo: "/Product/" + slug  },
+        });
+        return;
+      }
 
     }
   }
+
 
   /* ======================
      LOADING STATE
@@ -173,11 +158,12 @@ const ProductDetail = () => {
 
           {/* ADD TO CART */}
           <button
-            onClick={() => handleAddToCart(product._id)}
+            onClick={handleAddToCart}
             className="w-full py-3 cursor-pointer bg-blue-600 text-white rounded-xl text-lg hover:bg-blue-700 transition"
           >
             Add to Cart 🛒
           </button>
+
         </div>
       </div>
     </div>

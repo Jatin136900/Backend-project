@@ -10,6 +10,7 @@ import Users from './Admin/pages/Users'
 import Settings from "./Admin/pages/Settings";
 import Product from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
+import Cart from './pages/Cart.jsx'
 
 
 const router = createBrowserRouter([
@@ -53,6 +54,11 @@ const router = createBrowserRouter([
         path: "/product/:slug",
         element: <ProductDetail />
       },
+      {
+        path: "Cart",
+        element: <Cart />
+      },
+
 
     ]
   }

@@ -22,7 +22,7 @@ function Header() {
     setTimeout(() => {
       setLoading(false);
       navigate(path);
-    }, 3000);
+    }, 2000);
   }
 
   return (
@@ -56,7 +56,7 @@ function Header() {
               </Link>
 
               <Link
-                to="/cart"
+                to="/Cart"
                 className="relative"
                 onClick={(e) => {
                   e.preventDefault();
@@ -82,7 +82,7 @@ function Header() {
               {/* LOGOUT */}
               <Link
                 to="/login"
-                className="cursor-pointer hover:text-yellow-300"
+                className="cursor-pointer hover:text-red-500 transition"
                 onClick={(e) => {
                   e.preventDefault();
                   delayedNavigate("/login");
