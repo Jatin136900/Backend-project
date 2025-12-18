@@ -5,11 +5,15 @@ import { RiAdminFill } from "react-icons/ri";
 import { IoMdLogOut } from "react-icons/io";
 import logo from "../images/logo.png";
 import FullScreenLoader from "../components/FullScreenLoader"; // ✅ ADDED
+import { useAuth } from "../contexts/AuthProvider";
+
 
 function Header() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false); // ✅ ADDED
   const navigate = useNavigate(); // ✅ ADDED
+
+  const { cartCount } = useAuth(); // ✅ ADDED
 
   const linkClass = ({ isActive }) =>
     isActive
@@ -65,8 +69,9 @@ function Header() {
               >
                 <FaShoppingCart />
                 <span className="absolute -top-2 -right-3 bg-red-500 text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                  0
+                  {cartCount}
                 </span>
+
               </Link>
 
               <Link
