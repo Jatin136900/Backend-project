@@ -6,21 +6,20 @@ import { useAuth } from "../contexts/AuthProvider";
 const ProductDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
+
+  const { isLoggedIn, addToCart } = useAuth();
   const { updateCartCount } = useAuth();
-
-
-
-  const { increaseCart, cartCount } = useAuth(); // ✅ ADDED
-
+  const { increaseCart, cartCount } = useAuth(); // ✅ kept as is
 
   const [product, setProduct] = useState(null);
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [addedToCart, setAddedToCart] = useState(false);
 
   useEffect(() => {
     fetchProduct();
+    setAddedToCart(false);
   }, [slug]);
 
   /* ======================
@@ -29,15 +28,12 @@ const ProductDetail = () => {
   async function fetchProduct() {
     try {
       const res = await instance.get(`/product/${slug}`);
-
       if (!res.data) {
         setError("Product not found");
         return;
       }
-
       setProduct(res.data);
     } catch (err) {
-      console.error(err);
       setError("Something went wrong");
     } finally {
       setLoading(false);
@@ -47,73 +43,6 @@ const ProductDetail = () => {
   /* ======================
      ADD TO CART
   ====================== */
-
-
-
-  // async function handleAddToCart() {
-
-  //   try {
-  //     await instance.post("/cart/add", {
-  //       productId: product._id,
-  //       qty: qty,
-  //     });
-
-  //     increaseCart(qty); // ✅ ADD: HEADER COUNT UPDATE
-
-  //     // navigate("/cart");
-  //     navigate("/Product/" + slug);
-  //   } catch (err) {
-  //     if (err.response?.status === 401) {
-  //       navigate("/login", {
-  //         state: { redirectTo: "/Product/" + slug },
-  //       });
-  //       return;
-  //     }
-
-  //   }
-  // }
-
-  // async function handleAddToCart() {
-  //   try {
-
-  //     // ✅ ADD: CHECK PRODUCT ALREADY IN CART
-  //     const cartRes = await instance.get("/cart", {
-  //       withCredentials: true,
-  //     });
-
-  //     const alreadyAdded = cartRes.data.products.find(
-  //       (item) => item.productId._id === product._id
-  //     );
-
-  //     if (alreadyAdded) {
-  //       alert("You have already added this product");
-  //       return;
-  //     }
-
-  //     // ✅ ORIGINAL CODE (unchanged)
-  //     await instance.post("/cart/add", {
-  //       productId: product._id,
-  //       qty: qty,
-  //     });
-
-  //     // ✅ ALREADY PRESENT (KEEP)
-  //     increaseCart(qty);
-
-  //     // 🔥 ADD THIS (backend + context sync)
-  //     updateCartCount("add", qty);
-
-  //     navigate("/Product/" + slug);
-
-  //   } catch (err) {
-  //     if (err.response?.status === 401) {
-  //       navigate("/login", {
-  //         state: { redirectTo: "/Product/" + slug },
-  //       });
-  //     }
-  //   }
-  // }
-
-
   async function handleAddToCart() {
     try {
       const cartRes = await instance.get("/cart", {
@@ -126,19 +55,20 @@ const ProductDetail = () => {
 
       if (alreadyAdded) {
         alert("You have already added this product");
+        setAddedToCart(true);
         return;
       }
 
-      await instance.post("/cart/add", {
-        productId: product._id,
-        qty: qty,
-      });
+      await instance.post(
+        "/cart/add",
+        { productId: product._id, qty },
+        { withCredentials: true }
+      );
 
-      // ✅ ONLY THIS (ONE SOURCE)
       updateCartCount("add", qty);
+      setAddedToCart(true);
 
       navigate("/Product/" + slug);
-
     } catch (err) {
       if (err.response?.status === 401) {
         navigate("/login", {
@@ -148,10 +78,8 @@ const ProductDetail = () => {
     }
   }
 
-
-
   /* ======================
-     LOADING STATE
+     LOADING
   ====================== */
   if (loading) {
     return (
@@ -162,7 +90,7 @@ const ProductDetail = () => {
   }
 
   /* ======================
-     ERROR / NOT FOUND
+     ERROR
   ====================== */
   if (error || !product) {
     return (
@@ -181,7 +109,7 @@ const ProductDetail = () => {
   }
 
   /* ======================
-     MAIN UI
+     UI
   ====================== */
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -193,61 +121,38 @@ const ProductDetail = () => {
       </Link>
 
       <div className="bg-white rounded-2xl shadow-lg p-8 grid md:grid-cols-2 gap-10">
-
-        {/* IMAGE */}
         <div className="flex justify-center">
           <img
             src={`http://localhost:3000/${product.img}`}
             alt={product.name}
-            className="w-96 cursor-pointer object-contain"
+            className="w-96 object-contain"
           />
         </div>
 
-        {/* DETAILS */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
-            {product.name}
-          </h1>
-
-          <p className="text-gray-600 mb-4">
-            {product.description}
-          </p>
-
+          <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+          <p className="mb-4">{product.description}</p>
           <p className="text-red-600 text-3xl font-bold mb-2">
             ₹{product.discountedPrice}
           </p>
+          <p className="mb-6">Category: {product.category}</p>
 
-          <p className="text-gray-500 mb-6">
-            Category: {product.category}
-          </p>
-
-          {/* QUANTITY */}
           <div className="flex items-center gap-4 mb-6">
-            <button
-              onClick={() => qty > 1 && setQty(qty - 1)}
-              className="px-4 py-2 bg-gray-200 rounded"
-            >
-              −
-            </button>
-
-            <span className="text-xl font-semibold">{qty}</span>
-
-            <button
-              onClick={() => setQty(qty + 1)}
-              className="px-4 py-2 bg-gray-200 rounded"
-            >
-              +
-            </button>
+            <button onClick={() => qty > 1 && setQty(qty - 1)}>−</button>
+            <span>{qty}</span>
+            <button onClick={() => setQty(qty + 1)}>+</button>
           </div>
 
-          {/* ADD TO CART */}
           <button
             onClick={handleAddToCart}
-            className="w-full py-3 cursor-pointer bg-blue-600 text-white rounded-xl text-lg hover:bg-blue-700 transition"
+            disabled={addedToCart}
+            className={`w-full py-3 rounded-xl text-lg ${addedToCart
+                ? "bg-green-500 text-white"
+                : "bg-blue-600 text-white"
+              }`}
           >
-            Add to Cart 🛒
+            {addedToCart ? "✅ Added to Cart" : "Add to Cart 🛒"}
           </button>
-
         </div>
       </div>
     </div>
