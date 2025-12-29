@@ -59,7 +59,7 @@ function ProductCard({ product }) {
       <Link to={`/product/${product.slug || product._id}`}>
         <div className="flex justify-center">
           <img
-            src={`http://localhost:3000/${product.img}`}
+            src={`{import.meta.env.VITE_BASEURL}/${product.img}`}
             alt={product.name}
             className="w-48 h-48 object-contain"
             onError={(e) => {
