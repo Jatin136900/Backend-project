@@ -49,9 +49,9 @@ export async function loginUsers(req, res) {
 
         res.cookie("auth_token", auth_token, {
             httpOnly: true,
-            secure: false,
-            sameSite: "None",   // 🔥 CHANGED TO LAX
-            maxAge: 3600 * 1000,
+            secure: true,
+            sameSite: "none",
+            maxAge: 3600000,
         });
 
         return res.status(200).json({ message: "Login Successful" });
@@ -65,8 +65,8 @@ export async function logoutUsers(req, res) {
     try {
         res.clearCookie("auth_token", {
             httpOnly: true,
-            secure: false,      // ✅ SAME AS LOGIN
-            sameSite: "lax"     // ✅ SAME AS LOGIN
+            secure: true,
+            sameSite: "none",
         });
 
         return res.status(200).json({

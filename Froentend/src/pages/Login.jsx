@@ -8,7 +8,7 @@ function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { setIsLoggedIn, setLoggedinUser } = useAuth();
+  const { checkIsLoggedIn } = useAuth();
 
   const [data, setData] = useState({
     email: "",
@@ -37,11 +37,13 @@ function Login() {
       // ✅ INSTANCE USED (NO FULL URL, NO withCredentials)
       const response = await instance.post("/api/auth/login", data);
 
-      // ✅ AUTH STATE
-      setIsLoggedIn(true);
-      setLoggedinUser(response.data.user);
+      // // ✅ AUTH STATE
+      // setIsLoggedIn(true);
+      // setLoggedinUser(response.data.user);
 
       alert("User Login Successful!");
+
+      checkIsLoggedIn();
 
       // ⏳ Loader Delay
       setTimeout(() => {

@@ -19,6 +19,7 @@ export async function checkAuth(req, res, next) {
 
 
 export async function checkForlogin(req, res) {
+
     try {
         if (!req.query)
             return res.status(422).json({
@@ -35,8 +36,10 @@ export async function checkForlogin(req, res) {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_secret)
-        if (decoded.role === req.query.referer)
+        if (decoded.role === req.query.referer) {
             return res.status(200).json({ message: "token verified" })
+        }
+
     }
 
     catch (error) {

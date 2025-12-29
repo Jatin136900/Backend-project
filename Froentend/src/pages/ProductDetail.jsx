@@ -18,6 +18,8 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
+  
+  console.log(isLoggedIn);
 
   useEffect(() => {
     fetchProduct();
@@ -171,10 +173,9 @@ const ProductDetail = () => {
             onClick={handleAddToCart}
             disabled={addedToCart}
             className={`w-full py-3 rounded-xl text-lg font-semibold transition
-              ${
-                addedToCart
-                  ? "bg-green-500 text-white cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
+              ${addedToCart
+                ? "bg-green-500 text-white cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
               }`}
           >
             {addedToCart ? "✅ Added to Cart" : "Add to Cart 🛒"}
