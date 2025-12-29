@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import instance from "../axios.Config";
-import '../App.css'
+import "../App.css";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true); // 👈 loader state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getProducts();
   }, []);
 
+  /* ======================
+     FETCH PRODUCTS
+  ====================== */
   async function getProducts() {
     try {
       const response = await instance.get("/product");
@@ -19,11 +21,13 @@ const Product = () => {
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
-      setLoading(false); // 👈 loader off
+      setLoading(false);
     }
   }
 
-  // 🔄 CUSTOM LOADER
+  /* ======================
+     LOADER
+  ====================== */
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -33,14 +37,14 @@ const Product = () => {
   }
 
   return (
-    <>    <div className="bg-gray-50 min-h-screen px-6 py-10">
+    <div className="bg-gray-50 min-h-screen px-6 py-10">
 
       {/* HEADING */}
       <h1 className="text-3xl font-bold text-gray-800 mb-10 text-center">
         Our Products
       </h1>
 
-      {/* PRODUCT GRID */}
+      {/* GRID */}
       <div
         className="
           grid gap-8
@@ -51,20 +55,11 @@ const Product = () => {
         "
       >
         {products.map((product) => (
-          <Link
-            key={product._id}
-            to={`/product/${product.slug || product._id}`}
-            className="block"
-          >
-            <ProductCard product={product} />
-          </Link>
-
+          <ProductCard key={product._id} product={product} />
         ))}
       </div>
+
     </div>
-
-    </>
-
   );
 };
 

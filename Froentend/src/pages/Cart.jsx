@@ -1,56 +1,115 @@
 import React, { useEffect, useState } from "react";
 import instance from "../axios.Config";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
 
 export default function Cart() {
   const [cart, setCart] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
   const { updateCartCount } = useAuth();
 
   useEffect(() => {
     fetchCart();
   }, []);
 
+  /* ======================
+     FETCH CART
+  ====================== */
   async function fetchCart() {
-    const res = await instance.get("/cart", { withCredentials: true });
-    setCart(res.data);
+    try {
+      const res = await instance.get("/cart");
+      setCart(res.data);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate("/login", {
+          state: { redirectTo: "/cart" },
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
+  /* ======================
+     CHANGE QTY
+  ====================== */
   async function changeQty(productId, type) {
-    const res = await instance.patch(
-      "/cart/qty",
-      { productId, type },
-      { withCredentials: true }
-    );
+    try {
+      const res = await instance.patch("/cart/qty", {
+        productId,
+        type,
+      });
 
-    setCart(res.data);
+      setCart(res.data);
 
-    if (type === "inc") updateCartCount("add", 1);
-    if (type === "dec") updateCartCount("remove", 1);
+      if (type === "inc") updateCartCount("add", 1);
+      if (type === "dec") updateCartCount("remove", 1);
+    } catch (err) {
+      alert("Unable to update quantity");
+    }
   }
 
+  /* ======================
+     REMOVE ITEM
+  ====================== */
   async function removeItem(productId) {
-    const item = cart.products.find(
-      (i) => i.productId._id === productId
-    );
+    try {
+      const item = cart.products.find(
+        (i) => i.productId._id === productId
+      );
 
-    const res = await instance.delete(`/cart/${productId}`, {
-      withCredentials: true
-    });
+      const res = await instance.delete(`/cart/${productId}`);
 
-    setCart(res.data);
-    updateCartCount("remove", item.quantity);
+      setCart(res.data);
+      updateCartCount("remove", item.quantity);
+    } catch (err) {
+      alert("Unable to remove item");
+    }
   }
 
+  /* ======================
+     TOTAL
+  ====================== */
   const total =
     cart?.products.reduce(
-      (sum, i) => sum + i.productId.discountedPrice * i.quantity,
+      (sum, i) =>
+        sum + i.productId.discountedPrice * i.quantity,
       0
     ) || 0;
 
-  if (!cart || cart.products.length === 0)
-    return <div className="p-8 text-xl">Cart is empty 🛒</div>;
+  /* ======================
+     LOADING
+  ====================== */
+  if (loading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center text-xl">
+        Loading cart...
+      </div>
+    );
+  }
 
+  /* ======================
+     EMPTY CART
+  ====================== */
+  if (!cart || cart.products.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center gap-4">
+        <p className="text-xl">Cart is empty 🛒</p>
+        <Link
+          to="/product"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+        >
+          Continue Shopping
+        </Link>
+      </div>
+    );
+  }
+
+  /* ======================
+     UI
+  ====================== */
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       {/* HEADER */}
@@ -58,6 +117,7 @@ export default function Cart() {
         <Link to="/product" className="text-blue-600 font-medium">
           ← Continue Shopping
         </Link>
+
         <h1 className="text-2xl sm:text-3xl font-bold">
           Your Cart 🛒
         </h1>
@@ -74,6 +134,7 @@ export default function Cart() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               <img
                 src={`http://localhost:3000/${item.productId.img}`}
+                alt={item.productId.name}
                 className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
               />
 
@@ -100,7 +161,9 @@ export default function Cart() {
                   −
                 </button>
 
-                <span className="font-medium">{item.quantity}</span>
+                <span className="font-medium">
+                  {item.quantity}
+                </span>
 
                 <button
                   onClick={() =>
@@ -114,12 +177,16 @@ export default function Cart() {
 
               {/* PRICE */}
               <p className="font-bold text-lg">
-                ₹{item.productId.discountedPrice * item.quantity}
+                ₹
+                {item.productId.discountedPrice *
+                  item.quantity}
               </p>
 
               {/* REMOVE */}
               <button
-                onClick={() => removeItem(item.productId._id)}
+                onClick={() =>
+                  removeItem(item.productId._id)
+                }
                 className="bg-red-500 text-white px-4 py-2 rounded-lg w-full sm:w-auto"
               >
                 Remove

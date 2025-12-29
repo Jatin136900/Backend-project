@@ -1,8 +1,8 @@
-import axios from "axios";
 import React, { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
-import FullScreenLoader from "../components/FullScreenLoader"; // ✅ ADDED
+import FullScreenLoader from "../components/FullScreenLoader";
+import instance from "../axios.Config"; // ✅ AXIOS INSTANCE
 
 function Login() {
   const navigate = useNavigate();
@@ -10,33 +10,40 @@ function Login() {
 
   const { setIsLoggedIn, setLoggedinUser } = useAuth();
 
-  const [data, setData] = useState({ email: "", password: "" });
+  const [data, setData] = useState({
+    email: "",
+    password: "",
+  });
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  /* ======================
+     HANDLE INPUT CHANGE
+  ====================== */
   function handleChange(e) {
     setData({ ...data, [e.target.name]: e.target.value });
   }
 
+  /* ======================
+     HANDLE LOGIN SUBMIT
+  ====================== */
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/login",
-        data,
-        { withCredentials: true }
-      );
+      // ✅ INSTANCE USED (NO FULL URL, NO withCredentials)
+      const response = await instance.post("/auth/login", data);
 
-      // ✅ AUTH STATE SET
+      // ✅ AUTH STATE
       setIsLoggedIn(true);
       setLoggedinUser(response.data.user);
 
       alert("User Login Successful!");
 
-      // ⏳ 5 sec LOADER DELAY
+      // ⏳ Loader Delay
       setTimeout(() => {
         const redirectTo = location.state?.redirectTo || "/";
         navigate(redirectTo);
@@ -45,7 +52,9 @@ function Login() {
 
     } catch (error) {
       setLoading(false);
-      setErrorMsg(error.response?.data?.message || "Login failed");
+      setErrorMsg(
+        error.response?.data?.message || "Login failed"
+      );
     }
   }
 
@@ -61,6 +70,7 @@ function Login() {
             User Login
           </h2>
 
+          {/* ❌ ERROR MESSAGE */}
           {errorMsg && (
             <p className="bg-red-100 text-red-700 p-3 mb-4 rounded-lg text-center text-sm">
               {errorMsg}
@@ -68,7 +78,8 @@ function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
+
+            {/* EMAIL */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-600">
                 Email
@@ -79,12 +90,12 @@ function Login() {
                 value={data.email}
                 onChange={handleChange}
                 required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
                 placeholder="Enter your email"
               />
             </div>
 
-            {/* Password */}
+            {/* PASSWORD */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-600">
                 Password
@@ -95,25 +106,26 @@ function Login() {
                 value={data.password}
                 onChange={handleChange}
                 required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
                 placeholder="Enter your password"
               />
             </div>
 
-            {/* Login Button */}
+            {/* LOGIN BUTTON */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 rounded-lg text-white text-lg font-semibold transition-all duration-300 
-                ${loading 
-                  ? "bg-blue-400 cursor-not-allowed" 
+              className={`w-full py-3 rounded-lg text-white text-lg font-semibold transition-all duration-300
+                ${loading
+                  ? "bg-blue-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700 hover:scale-[1.02]"
-                }`}
+                }
+              `}
             >
               {loading ? "Please wait..." : "Login"}
             </button>
 
-            {/* Register */}
+            {/* REGISTER LINK */}
             <p className="text-center text-sm text-gray-600">
               Don’t have an account?{" "}
               <NavLink
@@ -123,6 +135,7 @@ function Login() {
                 Register
               </NavLink>
             </p>
+
           </form>
         </div>
       </div>

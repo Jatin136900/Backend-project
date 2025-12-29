@@ -1,42 +1,77 @@
 import { PiCurrencyInrLight } from "react-icons/pi";
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import instance from "../axios.Config";
+import { useAuth } from "../contexts/AuthProvider";
 
 function ProductCard({ product }) {
-  if (!product) return null;
+  // if (!product) return null;
 
+  const navigate = useNavigate();
+  const { updateCartCount } = useAuth();
   const [adding, setAdding] = useState(false);
 
-  function handleAddToCart() {
+  /* ======================
+     ADD TO CART
+  ====================== */
+  async function handleAddToCart() {
     if (adding) return;
 
-    setAdding(true);
+    try {
+      setAdding(true);
 
-    // 🔥 future API call yahin lagegi
-    setTimeout(() => {
+      const cartRes = await instance.get("/cart");
+
+      const alreadyAdded = cartRes.data.products.find(
+        (item) => item.productId._id === product._id
+      );
+
+      if (alreadyAdded) {
+        alert("Product already in cart");
+        return;
+      }
+
+      await instance.post("/cart/add", {
+        productId: product._id,
+        qty: 1,
+      });
+
+      updateCartCount("add", 1);
+      alert("Added to cart 🛒");
+
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate("/login", {
+          state: { redirectTo: "/" },
+        });
+      } else {
+        alert("Something went wrong");
+      }
+    } finally {
       setAdding(false);
-    }, 3000);
-
-
-
-    
+    }
   }
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-5 hover:shadow-xl transition duration-300">
 
-      {/* IMAGE */}
-      <div className="flex justify-center">
-        <img
-          src={`http://localhost:3000/${product.img}`}
-          alt={product.name}
-          className="w-48 h-48 object-contain"
-        />
-      </div>
+      {/* IMAGE + NAME (CLICKABLE) */}
+      <Link to={`/product/${product.slug || product._id}`}>
+        <div className="flex justify-center">
+          <img
+            src={`http://localhost:3000/${product.img}`}
+            alt={product.name}
+            className="w-48 h-48 object-contain"
+            onError={(e) => {
+              e.target.src = "/no-image.png"; // 🔥 fallback image
+            }}
+          />
+        </div>
 
-      {/* NAME */}
-      <h3 className="mt-4 text-lg font-semibold text-gray-800 truncate">
-        {product.name}
-      </h3>
+        <h3 className="mt-4 text-lg font-semibold text-gray-800 truncate hover:text-blue-600">
+          {product.name}
+        </h3>
+      </Link>
 
       {/* PRICE */}
       <p className="mt-2 flex items-center gap-1 text-lg">
@@ -57,7 +92,7 @@ function ProductCard({ product }) {
         )}
       </p>
 
-      {/* BUTTON */}
+      {/* ADD TO CART BUTTON */}
       <button
         onClick={handleAddToCart}
         disabled={adding}
