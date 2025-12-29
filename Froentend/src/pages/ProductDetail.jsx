@@ -146,7 +146,7 @@ const ProductDetail = () => {
           <button
             onClick={handleAddToCart}
             disabled={addedToCart}
-            className={`w-full py-3 rounded-xl text-lg ${addedToCart
+            className={`w-full py-3 cursor-pointer  rounded-xl text-lg ${addedToCart
                 ? "bg-green-500 text-white"
                 : "bg-blue-600 text-white"
               }`}
