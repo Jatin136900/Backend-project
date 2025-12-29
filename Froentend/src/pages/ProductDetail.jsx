@@ -130,7 +130,7 @@ const ProductDetail = () => {
         {/* IMAGE */}
         <div className="flex justify-center">
           <img
-            src={`http://localhost:3000/${product.img}`}
+            src={`${import.meta.env.VITE_BASEURL}/${product.img}`}
             alt={product.name}
             className="w-96 object-contain"
           />

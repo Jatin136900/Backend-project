@@ -133,7 +133,7 @@ export default function Cart() {
             {/* LEFT */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               <img
-                src={`http://localhost:3000/${item.productId.img}`}
+                src={`${import.meta.env.VITE_BASEURL}/${item.productId.img}`}
                 alt={item.productId.name}
                 className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
               />
