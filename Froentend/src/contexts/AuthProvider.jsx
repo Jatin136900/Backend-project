@@ -12,7 +12,7 @@ function AuthProvider({ children }) {
 
   useEffect(() => {
     checkIsLoggedIn();
-    fetchCartCount();
+    // fetchCartCount();
   }, []);
 
 
