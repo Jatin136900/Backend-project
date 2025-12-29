@@ -4,7 +4,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AuthProvider from "./contexts/AuthProvider";
-import Dashboard from "./admin/pages/Dashboard";
+import Dashboard from "./Admin/pages/Dashboard";
 import AdminLogin from "./Admin/pages/AdminLogin";
 import Users from './Admin/pages/Users'
 import Settings from "./Admin/pages/Settings";
