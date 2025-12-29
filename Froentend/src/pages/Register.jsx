@@ -28,7 +28,7 @@ function Register() {
     e.preventDefault();
 
     try {
-      const response = await instance.post("/auth/register", data);
+      const response = await instance.post("/api/auth/register", data);
 
       console.log("User Registered:", response.data);
       alert("User registered successfully");

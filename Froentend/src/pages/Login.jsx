@@ -35,7 +35,7 @@ function Login() {
 
     try {
       // ✅ INSTANCE USED (NO FULL URL, NO withCredentials)
-      const response = await instance.post("/auth/login", data);
+      const response = await instance.post("/api/auth/login", data);
 
       // ✅ AUTH STATE
       setIsLoggedIn(true);
