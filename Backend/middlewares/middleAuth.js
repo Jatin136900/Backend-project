@@ -7,6 +7,7 @@ export async function checkAuth(req, res, next) {
         if (!token) {
             return res.status(401).json({ message: "you need to log in to perform this action" })
         }
+        console.log("Secret", process.env.JWT_secret)
 
         const decoded = jwt.verify(token, process.env.JWT_secret);
         req.userId = decoded.id;
