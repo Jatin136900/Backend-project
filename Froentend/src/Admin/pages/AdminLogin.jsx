@@ -1,6 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import instance from "../../axios.Config";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -19,8 +19,8 @@ export default function AdminLogin() {
     setErrorMsg("");
 
     try {
-      const res = await axios.post(
-        "http://localhost:3000/admin/login",
+      const res = await instance.post(
+        "/admin/login",
         data,
         { withCredentials: true }
       );
