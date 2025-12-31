@@ -7,6 +7,13 @@ export default function Cart() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // 🔹 Coupon states
+  const [couponCode, setCouponCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [finalPrice, setFinalPrice] = useState(0);
+  const [couponError, setCouponError] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+
   const navigate = useNavigate();
   const { updateCartCount } = useAuth();
 
@@ -23,9 +30,7 @@ export default function Cart() {
       setCart(res.data);
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate("/login", {
-          state: { redirectTo: "/cart" },
-        });
+        navigate("/login", { state: { redirectTo: "/cart" } });
       }
     } finally {
       setLoading(false);
@@ -37,16 +42,16 @@ export default function Cart() {
   ====================== */
   async function changeQty(productId, type) {
     try {
-      const res = await instance.patch("/cart/qty", {
-        productId,
-        type,
-      });
-
+      const res = await instance.patch("/cart/qty", { productId, type });
       setCart(res.data);
+
+      setCouponApplied(false);
+      setDiscount(0);
+      setFinalPrice(0);
 
       if (type === "inc") updateCartCount("add", 1);
       if (type === "dec") updateCartCount("remove", 1);
-    } catch (err) {
+    } catch {
       alert("Unable to update quantity");
     }
   }
@@ -61,10 +66,14 @@ export default function Cart() {
       );
 
       const res = await instance.delete(`/cart/${productId}`);
-
       setCart(res.data);
+
+      setCouponApplied(false);
+      setDiscount(0);
+      setFinalPrice(0);
+
       updateCartCount("remove", item.quantity);
-    } catch (err) {
+    } catch {
       alert("Unable to remove item");
     }
   }
@@ -74,10 +83,32 @@ export default function Cart() {
   ====================== */
   const total =
     cart?.products.reduce(
-      (sum, i) =>
-        sum + i.productId.discountedPrice * i.quantity,
+      (sum, i) => sum + i.productId.discountedPrice * i.quantity,
       0
     ) || 0;
+
+  /* ======================
+     APPLY COUPON
+  ====================== */
+  async function applyCoupon() {
+    try {
+      setCouponError("");
+
+      const res = await instance.post("/coupon/apply", {
+        code: couponCode,
+        cartTotal: total,
+      });
+
+      setDiscount(res.data.discountAmount);
+      setFinalPrice(res.data.finalPrice);
+      setCouponApplied(true);
+    } catch (error) {
+      setCouponApplied(false);
+      setDiscount(0);
+      setFinalPrice(0);
+      setCouponError(error.response?.data?.message || "Invalid coupon");
+    }
+  }
 
   /* ======================
      LOADING
@@ -113,14 +144,11 @@ export default function Cart() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
         <Link to="/product" className="text-blue-600 font-medium">
           ← Continue Shopping
         </Link>
-
-        <h1 className="text-2xl sm:text-3xl font-bold">
-          Your Cart 🛒
-        </h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Your Cart 🛒</h1>
       </div>
 
       {/* CART BOX */}
@@ -131,63 +159,45 @@ export default function Cart() {
             className="flex flex-col lg:flex-row justify-between gap-6 py-6 border-b"
           >
             {/* LEFT */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-4">
               <img
                 src={`${import.meta.env.VITE_BASEURL}/${item.productId.img}`}
                 alt={item.productId.name}
-                className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
+                className="w-20 h-20 object-contain"
               />
-
               <div>
                 <h2 className="font-semibold text-lg">
                   {item.productId.name}
                 </h2>
                 <p className="text-gray-500">
-                  Price: ₹{item.productId.discountedPrice}
+                  ₹{item.productId.discountedPrice}
                 </p>
               </div>
             </div>
 
             {/* RIGHT */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              {/* QTY */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() =>
-                    changeQty(item.productId._id, "dec")
-                  }
-                  className="px-3 py-1 bg-gray-200 rounded"
-                >
-                  −
-                </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => changeQty(item.productId._id, "dec")}
+                className="px-3 py-1 bg-gray-200 rounded"
+              >
+                −
+              </button>
+              <span>{item.quantity}</span>
+              <button
+                onClick={() => changeQty(item.productId._id, "inc")}
+                className="px-3 py-1 bg-gray-200 rounded"
+              >
+                +
+              </button>
 
-                <span className="font-medium">
-                  {item.quantity}
-                </span>
-
-                <button
-                  onClick={() =>
-                    changeQty(item.productId._id, "inc")
-                  }
-                  className="px-3 py-1 bg-gray-200 rounded"
-                >
-                  +
-                </button>
-              </div>
-
-              {/* PRICE */}
-              <p className="font-bold text-lg">
-                ₹
-                {item.productId.discountedPrice *
-                  item.quantity}
+              <p className="font-bold">
+                ₹{item.productId.discountedPrice * item.quantity}
               </p>
 
-              {/* REMOVE */}
               <button
-                onClick={() =>
-                  removeItem(item.productId._id)
-                }
-                className="bg-red-500 text-white px-4 py-2 rounded-lg w-full sm:w-auto"
+                onClick={() => removeItem(item.productId._id)}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg"
               >
                 Remove
               </button>
@@ -195,13 +205,43 @@ export default function Cart() {
           </div>
         ))}
 
+        {/* COUPON */}
+        <div className="mt-6 p-4 border rounded-xl">
+          <h3 className="font-semibold mb-2">Apply Coupon</h3>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              placeholder="Enter coupon code"
+              className="border px-4 py-2 rounded-lg w-full"
+            />
+            <button
+              onClick={applyCoupon}
+              className="bg-blue-600 text-white px-6 rounded-lg"
+            >
+              Apply
+            </button>
+          </div>
+
+          {couponError && (
+            <p className="text-red-500 mt-2">{couponError}</p>
+          )}
+
+          {couponApplied && (
+            <p className="text-green-600 mt-2">
+              Coupon applied! You saved ₹{discount}
+            </p>
+          )}
+        </div>
+
         {/* TOTAL */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+        <div className="flex justify-between items-center mt-6">
           <h2 className="text-2xl font-bold">
-            Total: ₹{total}
+            Total: ₹{couponApplied ? finalPrice : total}
           </h2>
 
-          <button className="bg-green-600 text-white px-8 py-3 rounded-xl text-lg w-full sm:w-auto">
+          <button className="bg-green-600 text-white px-8 py-3 rounded-xl text-lg">
             Checkout
           </button>
         </div>

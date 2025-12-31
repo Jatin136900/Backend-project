@@ -2,7 +2,7 @@ import { FaHeart } from "react-icons/fa";
 
 function Footer() {
   return (
-    <footer className="bg-amber-700 text-white px-6 py-6 text-center  shadow-md mt-8 w-full z-50">
+    <footer className="bg-amber-700 text-white px-6 py-6 text-center  shadow-md  w-full z-50">
       <div className="flex flex-col md:flex-row justify-center items-center gap-2 text-sm md:text-base">
         <p>&copy; 2025 | All Rights Reserved</p>
         <p>

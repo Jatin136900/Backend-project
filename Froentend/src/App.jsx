@@ -4,62 +4,45 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AuthProvider from "./contexts/AuthProvider";
-import Dashboard from "./Admin/pages/Dashboard";
+
 import AdminLogin from "./Admin/pages/AdminLogin";
-import Users from './Admin/pages/Users'
+import Dashboard from "./Admin/pages/Dashboard";
+import Users from "./Admin/pages/Users";
 import Settings from "./Admin/pages/Settings";
+import AdminLayout from "./Admin/AdminLayout";
+
 import Product from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
-import Cart from './pages/Cart.jsx'
-
+import Cart from "./pages/Cart";
+import Coupon from "./Admin/pages/Coupon";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <First />,
     children: [
+      { index: true, element: <Home /> },
+      { path: "login", element: <Login /> },
+      { path: "register", element: <Register /> },
+      
+      /* ---------- ADMIN ---------- */
+      { path: "admin/login", element: <AdminLogin /> },
+      
       {
-        index: true,
-        element: <Home />
-      },
-      {
-        path: "login",
-        element: <Login />
-      },
-      {
-        path: "register",
-        element: <Register />
-      },
-      {
-        path: "admin/admin/login",
-        element: <AdminLogin />
-      },
-      {
-        path: "admin/dashboard",
-        element: <Dashboard />
-      },
-      {
-        path: "admin/users",
-        element: <Users />
-      },
-      {
-        path: "admin/settings",
-        element: <Settings />
-      },
-      {
-        path: "product",
-        element: <Product />
-      },
-      {
-        path: "/product/:slug",
-        element: <ProductDetail />
-      },
-      {
-        path: "Cart",
-        element: <Cart />
+        path: "admin",
+        element: <AdminLayout />,   // 👈 LAYOUT
+        children: [
+          { path: "dashboard", element: <Dashboard /> },
+          { path: "users", element: <Users /> },
+          { path: "settings", element: <Settings /> },
+          { path: "Coupon", element: <Coupon /> },
+        ]
       },
 
-
+      /* ---------- USER ---------- */
+      { path: "product", element: <Product /> },
+      { path: "product/:slug", element: <ProductDetail /> },
+      { path: "cart", element: <Cart /> }
     ]
   }
 ]);

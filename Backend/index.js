@@ -9,6 +9,8 @@ import adminRoutes from './routes/Admin.js'
 import checkRouter from "./routes/check.js";
 import cartRouter from "./routes/cart.js";
 import cookieParser from "cookie-parser";
+import couponRouter from "./routes/Coupon.js";  
+import path from "path";
 
 
 
@@ -36,6 +38,9 @@ app.use(
 
 app.use(cookieParser());
 
+
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 // app.use("/", router)
 
 app.use("/product", productRouter);
@@ -49,6 +54,8 @@ app.use("/check", checkRouter)
 app.use("/uploads", express.static("uploads"));
 
 app.use('/cart', cartRouter)
+
+app.use ('/coupon', couponRouter);
 
 
 

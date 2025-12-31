@@ -80,7 +80,7 @@ function Header() {
                 to="/admin/admin/login"
                 onClick={(e) => {
                   e.preventDefault();
-                  delayedNavigate("/admin/admin/login");
+                  delayedNavigate("/admin/login");
                 }}
               >
                 <RiAdminFill />
@@ -164,7 +164,7 @@ function Header() {
             <div className="flex justify-around text-2xl text-white">
               <FaUser onClick={() => delayedNavigate("/login")} />
               <FaShoppingCart onClick={() => delayedNavigate("/cart")} />
-              <RiAdminFill onClick={() => delayedNavigate("/admin/admin/login")} />
+              <RiAdminFill onClick={() => delayedNavigate("/admin/login")} />
               {/* <IoMdLogOut onClick={() => delayedNavigate("/login")} /> */}
               <IoMdLogOut
                 onClick={async () => {
