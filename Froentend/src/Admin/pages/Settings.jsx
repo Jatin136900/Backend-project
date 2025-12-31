@@ -39,7 +39,7 @@ export default function Settings() {
               <th className="px-6 py-4">Category</th>
               <th className="px-6 py-4">Price</th>
               <th className="px-6 py-4">Slug</th>
-              <th className="px-6 py-4">Product ID</th>
+              {/* <th className="px-6 py-4">Product ID</th> */}
               <th className="px-6 py-4 text-center">Actions</th>
             </tr>
           </thead>
@@ -92,9 +92,9 @@ export default function Settings() {
                 </td>
 
                 {/* ID */}
-                <td className="px-6 py-4 text-xs text-gray-400">
+                {/* <td className="px-6 py-4 text-xs text-gray-400">
                   {p._id}
-                </td>
+                </td> */}
 
                 {/* Actions */}
                 <td className="px-6 py-4">

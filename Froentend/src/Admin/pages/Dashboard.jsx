@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useState } from "react";
+import instance from "../../axios.Config";
 
 function AddProduct() {
   const [data, setData] = useState({
@@ -51,8 +52,8 @@ function AddProduct() {
     if (!slug) return;
 
     try {
-      const response = await axios.get(
-        "http://localhost:3000/product/checkSlug/" + slug,
+      const response = await instance.get(
+        "product/checkSlug/" + slug,
         { withCredentials: true }
       );
 
@@ -82,8 +83,8 @@ function AddProduct() {
     });
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/product",
+      const response = await instance.post(
+        "product",
         product,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
