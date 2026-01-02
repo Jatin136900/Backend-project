@@ -15,6 +15,7 @@ import Product from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Coupon from "./Admin/pages/Coupon";
+import GithubCallback from "./pages/GithubCallback";
 
 const router = createBrowserRouter([
   {
@@ -24,10 +25,10 @@ const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
-      
+
       /* ---------- ADMIN ---------- */
       { path: "admin/login", element: <AdminLogin /> },
-      
+
       {
         path: "admin",
         element: <AdminLayout />,   // 👈 LAYOUT
@@ -42,7 +43,8 @@ const router = createBrowserRouter([
       /* ---------- USER ---------- */
       { path: "product", element: <Product /> },
       { path: "product/:slug", element: <ProductDetail /> },
-      { path: "cart", element: <Cart /> }
+      { path: "cart", element: <Cart /> },
+      { path: "github-callback", element: <GithubCallback /> }
     ]
   }
 ]);

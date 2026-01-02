@@ -47,3 +47,24 @@ export async function checkForlogin(req, res) {
         return res.status(500).json({ message: error.message })
     }
 }
+
+export function checkAdmin(req, res, next) {
+    try {
+        const token = req.cookies.admin_token;
+
+        if (!token) {
+            return res.status(401).json({ message: "Admin login required" });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        if (decoded.role !== "admin") {
+            return res.status(403).json({ message: "Admins only" });
+        }
+
+        req.adminId = decoded.id;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid admin token" });
+    }
+}

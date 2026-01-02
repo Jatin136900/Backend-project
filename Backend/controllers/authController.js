@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import "dotenv/config";
+import axios from "axios";
+
 
 export async function getUsers(req, res) {
 
@@ -150,4 +152,89 @@ export async function deleteUsers(req, res) {
         });
     }
 }
+
+
+
+
+
+
+export async function githubLogin(req, res) {
+    try {
+        const { code } = req.body;
+
+        if (!code) {
+            return res.status(400).json({ message: "Code missing" });
+        }
+
+        // 1️⃣ code → access token
+        const tokenRes = await axios.post(
+            "https://github.com/login/oauth/access_token",
+            {
+                client_id: process.env.GITHUB_CLIENT_ID,
+                client_secret: process.env.GITHUB_CLIENT_SECRET,
+                code,
+            },
+            { headers: { Accept: "application/json" } }
+        );
+
+        const accessToken = tokenRes.data.access_token;
+        if (!accessToken) {
+            return res.status(400).json({ message: "No access token" });
+        }
+
+        // 2️⃣ GitHub user
+        const userRes = await axios.get("https://api.github.com/user", {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        // 3️⃣ Email fetch (IMPORTANT)
+        const emailRes = await axios.get(
+            "https://api.github.com/user/emails",
+            {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            }
+        );
+
+        const primaryEmail =
+            emailRes.data.find(e => e.primary)?.email ||
+            `${userRes.data.id}@github.local`;
+
+        // 4️⃣ Find or create user
+        let user = await Auth.findOne({ email: primaryEmail });
+
+        if (!user) {
+            user = await Auth.create({
+                name: userRes.data.name || "GitHub User",
+                email: primaryEmail,
+                avatar: userRes.data.avatar_url,
+                role: "user",
+                provider: "github",
+            });
+        }
+
+        // 5️⃣ JWT
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        res.cookie("auth_token", token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+        });
+
+        return res.status(200).json({ message: "GitHub login successful" });
+
+    } catch (error) {
+        console.error("GitHub Login Error:", error.message);
+        return res.status(500).json({ message: "GitHub login failed" });
+    }
+}
+
+
+
+
 export async function updateUsers(req, res) { }
+

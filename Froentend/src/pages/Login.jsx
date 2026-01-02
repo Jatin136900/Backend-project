@@ -81,6 +81,21 @@ function Login() {
     alert("Google Login Failed");
   }
 
+  function handleGithubLogin() {
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+
+    const redirectUri = "http://localhost:5173/github-callback";
+
+    window.location.href =
+      `https://github.com/login/oauth/authorize` +
+      `?client_id=${clientId}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&scope=user:email read:user`;
+  }
+
+
+
+
 
   return (
     <>
@@ -161,6 +176,19 @@ function Login() {
                 />
               </div>
             </div>
+
+            <div className="flex justify-center mt-3">
+              <button
+                type="button"
+                onClick={handleGithubLogin}
+                className="w-full py-3 rounded-lg bg-gray-900 text-white font-semibold hover:bg-black transition cursor-pointer"
+              >
+                Continue with GitHub
+              </button>
+            </div>
+
+
+
             {/* REGISTER LINK */}
             <p className="text-center text-sm text-gray-600">
               Don’t have an account?{" "}

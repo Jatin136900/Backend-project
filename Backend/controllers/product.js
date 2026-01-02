@@ -9,7 +9,7 @@ export async function addProduct(req, res) {
     try {
         const newRecord = req.body;
         if (req.file) {
-            newRecord.img = req.file.path.replace("\\", "/")    ;
+            newRecord.img = req.file.path.replace("\\", "/");
         }
         const product = new Product(newRecord);
         await product.save();
@@ -28,17 +28,43 @@ export async function getProducts(req, res) {
     }
 }
 
-export async function updateProduct(req, res) {
+// export async function updateProduct(req, res) {
 
+//     try {
+//         const { id } = req.params;
+//         const updatedData = req.body;
+//         if (!id) {
+//             return res.status(400).json({ message: "ID parameter is required" });
+//         }
+//         if (!updatedData) {
+//             return res.status(400)
+//                 .json({ message: "Updated data is required" });
+//         }
+
+//         const updatedProduct = await Product.findByIdAndUpdate(
+//             id,
+//             updatedData,
+//             { new: true }
+//         );
+//         if (!updatedProduct) {
+//             return res.status(404).json({ message: "ID not found" });
+//         }
+//         return res
+//             .status(200)
+//             .json({ message: "Product with id " + id + " successfully updated", updatedProduct });
+//     } catch (error) {
+//         return res.status(500).json({ message: error.message });
+//     }
+// }
+
+
+export async function updateProduct(req, res) {
     try {
         const { id } = req.params;
         const updatedData = req.body;
-        if (!id) {
-            return res.status(400).json({ message: "ID parameter is required" });
-        }
-        if (!updatedData) {
-            return res.status(400)
-                .json({ message: "Updated data is required" });
+
+        if (req.file) {
+            updatedData.img = req.file.path.replace("\\", "/");
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(
@@ -46,14 +72,17 @@ export async function updateProduct(req, res) {
             updatedData,
             { new: true }
         );
+
         if (!updatedProduct) {
-            return res.status(404).json({ message: "ID not found" });
+            return res.status(404).json({ message: "Product not found" });
         }
-        return res
-            .status(200)
-            .json({ message: "Product with id " + id + " successfully updated", updatedProduct });
+
+        res.status(200).json({
+            message: "Product updated successfully",
+            updatedProduct,
+        });
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 }
 
