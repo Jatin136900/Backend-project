@@ -33,14 +33,14 @@ export const googleLogin = async (req, res) => {
     const authToken = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "1d" }
     );
 
     res.cookie("auth_token", authToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: true,
+      sameSite: "none",
+      maxAge: 60 * 60 * 1000,
     });
 
     res.status(200).json({ message: "Login success", user });
