@@ -3,6 +3,8 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
 import FullScreenLoader from "../components/FullScreenLoader";
 import instance from "../axios.Config"; // ✅ AXIOS INSTANCE
+import { GoogleLogin } from "@react-oauth/google";
+
 
 function Login() {
   const navigate = useNavigate();
@@ -59,6 +61,26 @@ function Login() {
       );
     }
   }
+
+  async function handleGoogleSuccess(credentialResponse) {
+    try {
+      await instance.post("/user/google-login", {
+        token: credentialResponse.credential,
+      });
+
+      alert("Google login successful");
+      setIsLoggedIn(true);
+      navigate("/");
+    } catch (error) {
+      console.error(error);
+      alert("Google login failed");
+    }
+  }
+
+  function handleGoogleError() {
+    alert("Google Login Failed");
+  }
+
 
   return (
     <>
@@ -126,7 +148,19 @@ function Login() {
             >
               {loading ? "Please wait..." : "Login"}
             </button>
-
+            <div className="flex justify-center">
+              <div className="w-full">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  width="100%"
+                  theme="outline"
+                  size="large"
+                  text="continue_with"
+                  shape="rectangular"
+                />
+              </div>
+            </div>
             {/* REGISTER LINK */}
             <p className="text-center text-sm text-gray-600">
               Don’t have an account?{" "}
@@ -137,6 +171,7 @@ function Login() {
                 Register
               </NavLink>
             </p>
+
 
           </form>
         </div>

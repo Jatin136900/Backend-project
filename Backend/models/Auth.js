@@ -8,6 +8,8 @@ const authSchema = new Schema({
     password: { type: String, required: true, min: 8, max: 60 },
     image: { type: String },
     role: { type: String },
+    authProvider: { type: String, enum: ["local", "google"], default: "local", },
+    googleId: { type: String, unique: true, sparse: true },
 });
 
 const Auth = model("auth", authSchema, "auth");
