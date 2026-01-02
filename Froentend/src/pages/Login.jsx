@@ -77,9 +77,7 @@ function Login() {
     }
   }
 
-  function handleGoogleError() {
-    alert("Google Login Failed");
-  }
+
 
   function handleGithubLogin() {
     const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
@@ -167,7 +165,6 @@ function Login() {
               <div className="w-full">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
                   width="100%"
                   theme="outline"
                   size="large"
