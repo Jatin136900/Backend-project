@@ -1,11 +1,11 @@
 import { Schema, model } from "mongoose";
 
 const authSchema = new Schema({
-    name: { type: String, required: true },
+    name: { type: String, },
     email: { type: String, required: true, unique: true },
-    username: { type: String, required: true, unique: true, min: 4, max: 30 },
-    phone: { type: Number, required: true, unique: true },
-    password: { type: String, required: true, min: 8, max: 60 },
+    username: { type: String, sparse: true, unique: true, min: 4, max: 30 },
+    phone: { type: Number, sparse: true, unique: true },
+    password: { type: String, min: 8, max: 60 },
     image: { type: String },
     role: { type: String },
     authProvider: { type: String, enum: ["local", "google"], default: "local", },
