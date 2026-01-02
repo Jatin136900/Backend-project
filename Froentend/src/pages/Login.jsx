@@ -69,7 +69,6 @@ function Login() {
       });
 
       alert("Google login successful");
-      setIsLoggedIn(true);
       navigate("/");
     } catch (error) {
       console.error(error);
