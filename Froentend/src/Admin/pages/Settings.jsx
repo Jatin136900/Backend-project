@@ -57,30 +57,28 @@ export default function Settings() {
 
       data.append("name", formData.name);
       data.append("category", formData.category);
-      data.append("discountedPrice", formData.discountedPrice);
-      data.append("originalPrice", formData.originalPrice);
+      data.append(
+        "discountedPrice",
+        Number(formData.discountedPrice)
+      );
       data.append("description", formData.description);
-      data.append("slug", formData.slug);
 
-      // 🔥 IMAGE KEY MUST MATCH MULTER
+      // ✅ IMAGE KEY MATCH MULTER
       if (formData.image) {
-        data.append("image", formData.image);
+        data.append("img", formData.image);
       }
 
-      await instance.put(`/product/${editProduct._id}`, data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await instance.put(`/product/${editProduct._id}`, data);
 
       alert("Product updated successfully ✅");
       closeModal();
       fetchProducts();
     } catch (err) {
-      console.error(err);
+      console.error("UPDATE ERROR:", err.response?.data || err.message);
       alert("Update failed ❌");
     }
   }
+
 
 
   return (

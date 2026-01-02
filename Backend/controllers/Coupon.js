@@ -1,25 +1,27 @@
 import Coupon from "../models/Coupon.js";
 
 /* ======================
-   ADMIN: ADD COUPON
+   ADD COUPON
 ====================== */
 export const addCoupon = async (req, res) => {
   try {
     const { code, discount, startDate, expiryDate } = req.body;
 
-    if (!code || !discount || !startDate || !expiryDate) {
-      return res.status(400).json({ message: "All fields are required" });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (new Date(startDate) < today) {
+      return res.status(400).json({ message: "Start date cannot be in past" });
     }
 
-    if (new Date(startDate) >= new Date(expiryDate)) {
-      return res.status(400).json({
-        message: "Expiry date must be after start date",
-      });
+    if (new Date(expiryDate) <= new Date(startDate)) {
+      return res
+        .status(400)
+        .json({ message: "Expiry must be after start date" });
     }
 
-    const existingCoupon = await Coupon.findOne({ code });
-
-    if (existingCoupon) {
+    const exists = await Coupon.findOne({ code });
+    if (exists) {
       return res.status(400).json({ message: "Coupon already exists" });
     }
 
@@ -30,56 +32,52 @@ export const addCoupon = async (req, res) => {
       expiryDate,
     });
 
-    res.status(201).json({
-      message: "Coupon added successfully",
-      coupon,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(201).json(coupon);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
 /* ======================
-   USER: APPLY COUPON
+   GET COUPONS
+====================== */
+export const getCoupons = async (req, res) => {
+  const coupons = await Coupon.find().sort({ createdAt: -1 });
+  res.json(coupons);
+};
+
+/* ======================
+   DELETE COUPON
+====================== */
+export const deleteCoupon = async (req, res) => {
+  await Coupon.findByIdAndDelete(req.params.id);
+  res.json({ message: "Coupon deleted" });
+};
+
+/* ======================
+   APPLY COUPON
 ====================== */
 export const applyCoupon = async (req, res) => {
-  try {
-    const { code, cartTotal } = req.body;
+  const { code, cartTotal } = req.body;
 
-    if (!code || !cartTotal) {
-      return res
-        .status(400)
-        .json({ message: "Coupon code and cart total required" });
-    }
-
-    const coupon = await Coupon.findOne({ code });
-
-    if (!coupon) {
-      return res.status(404).json({ message: "Invalid coupon" });
-    }
-
-    const now = new Date();
-
-    // ⛔ Coupon not started yet
-    if (now < new Date(coupon.startDate)) {
-      return res.status(400).json({ message: "Coupon not active yet" });
-    }
-
-    // ⛔ Coupon expired
-    if (now > new Date(coupon.expiryDate)) {
-      return res.status(400).json({ message: "Coupon expired" });
-    }
-
-    const discountAmount = (cartTotal * coupon.discount) / 100;
-    const finalPrice = cartTotal - discountAmount;
-
-    res.status(200).json({
-      message: "Coupon applied successfully",
-      discountPercentage: coupon.discount,
-      discountAmount,
-      finalPrice,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
+  const coupon = await Coupon.findOne({ code });
+  if (!coupon) {
+    return res.status(404).json({ message: "Invalid coupon" });
   }
+
+  const now = new Date();
+
+  if (now < coupon.startDate)
+    return res.status(400).json({ message: "Coupon not active yet" });
+
+  if (now > coupon.expiryDate)
+    return res.status(400).json({ message: "Coupon expired" });
+
+  const discountAmount = (cartTotal * coupon.discount) / 100;
+
+  res.json({
+    discount: coupon.discount,
+    discountAmount,
+    finalPrice: cartTotal - discountAmount,
+  });
 };
