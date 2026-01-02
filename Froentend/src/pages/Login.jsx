@@ -64,7 +64,7 @@ function Login() {
 
   async function handleGoogleSuccess(credentialResponse) {
     try {
-      await instance.post("/user/google-login", {
+      await instance.post("/api/auth/googleLogin", {
         token: credentialResponse.credential,
       });
 
