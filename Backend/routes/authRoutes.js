@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUsers, loginUsers, logoutUsers, registerUser, deleteUsers, updateUsers, } from "../controllers/authController.js";
+import { getUsers, loginUsers, logoutUsers, registerUser, deleteUsers, updateUsers,  } from "../controllers/authController.js";
 import { googleLogin } from "../controllers/GoogleLogin.js";
 import { githubLogin } from "../controllers/authController.js";
 
@@ -15,13 +15,15 @@ router.post("/logout", logoutUsers);
 
 router.post("/register", registerUser);
 
-router.delete("/:id", deleteUsers);    
+router.delete("/:id", deleteUsers);
 
 router.put("/:id", updateUsers);
 
-router.post ("/googleLogin",googleLogin)
+router.post("/googleLogin", googleLogin)
 
 router.post("/github-login", githubLogin);
+
+// router.get("/check/login", checkLogin);
 
 export default router;
 

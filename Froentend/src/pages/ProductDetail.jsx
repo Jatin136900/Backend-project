@@ -18,7 +18,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
-  
+
   console.log(isLoggedIn);
 
   useEffect(() => {
@@ -49,9 +49,44 @@ const ProductDetail = () => {
   /* ======================
      ADD TO CART
   ====================== */
+  // async function handleAddToCart() {
+  //   try {
+  //     // 🔥 Cart fetch via instance
+  //     const cartRes = await instance.get("/cart");
+
+  //     const alreadyAdded = cartRes.data.products.find(
+  //       (item) => item.productId._id === product._id
+  //     );
+
+  //     if (alreadyAdded) {
+  //       console.log("You have already added this product");
+  //       setAddedToCart(true);
+  //       return;
+  //     }
+
+  //     // 🔥 Add to cart
+  //     await instance.post("/cart/add", {
+  //       productId: product._id,
+  //       qty,
+  //     });
+
+  //     updateCartCount("add", qty);
+  //     setAddedToCart(true);
+
+  //     navigate("/Product/" + slug);
+
+  //   } catch (err) {
+  //     // 🔐 Not logged in → redirect to login
+  //     if (err.response?.status === 401) {
+  //       navigate("/login", {
+  //         state: { redirectTo: "/Product/" + slug },
+  //       });
+  //     }
+  //   }
+  // }
+
   async function handleAddToCart() {
     try {
-      // 🔥 Cart fetch via instance
       const cartRes = await instance.get("/cart");
 
       const alreadyAdded = cartRes.data.products.find(
@@ -59,12 +94,11 @@ const ProductDetail = () => {
       );
 
       if (alreadyAdded) {
-        alert("You have already added this product");
         setAddedToCart(true);
+        navigate("/cart"); 
         return;
       }
 
-      // 🔥 Add to cart
       await instance.post("/cart/add", {
         productId: product._id,
         qty,
@@ -73,10 +107,9 @@ const ProductDetail = () => {
       updateCartCount("add", qty);
       setAddedToCart(true);
 
-      navigate("/Product/" + slug);
+      navigate("/cart"); // 👈 ADD TO CART ke baad direct CART page
 
     } catch (err) {
-      // 🔐 Not logged in → redirect to login
       if (err.response?.status === 401) {
         navigate("/login", {
           state: { redirectTo: "/Product/" + slug },
@@ -84,6 +117,7 @@ const ProductDetail = () => {
       }
     }
   }
+
 
   /* ======================
      LOADING
@@ -172,7 +206,7 @@ const ProductDetail = () => {
           <button
             onClick={handleAddToCart}
             disabled={addedToCart}
-            className={`w-full py-3 rounded-xl text-lg font-semibold transition
+            className={`w-full cursor-pointer py-3 rounded-xl text-lg font-semibold transition
               ${addedToCart
                 ? "bg-green-500 text-white cursor-not-allowed"
                 : "bg-blue-600 text-white hover:bg-blue-700"

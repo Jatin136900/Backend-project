@@ -15,7 +15,7 @@ export default function Users() {
       setUsers(res.data);
     } catch (err) {
       console.error(err);
-      alert("Failed to load users");
+      console.error("Failed to load users", err);
     } finally {
       setLoading(false);
     }

@@ -51,8 +51,8 @@ export default function Cart() {
 
       if (type === "inc") updateCartCount("add", 1);
       if (type === "dec") updateCartCount("remove", 1);
-    } catch {
-      alert("Unable to update quantity");
+    } catch (err) {
+      console.error("Unable to update quantity", err);
     }
   }
 
@@ -73,8 +73,8 @@ export default function Cart() {
       setFinalPrice(0);
 
       updateCartCount("remove", item.quantity);
-    } catch {
-      alert("Unable to remove item");
+    } catch (err) {
+      console.error("Unable to remove item", err);
     }
   }
 

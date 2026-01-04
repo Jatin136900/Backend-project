@@ -10,7 +10,7 @@ export default function Navbar() {
       navigate("/admin/login");             // 👈 redirect
     } catch (error) {
       console.error(error);
-      alert("Logout failed");
+      console.error("Logout failed", error);
     }
   }
 

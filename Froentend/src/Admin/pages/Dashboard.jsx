@@ -66,7 +66,7 @@ function AddProduct() {
     } catch (err) {
       // ❌ 400 means slug exists
       if (err.response?.status === 400) {
-        alert("Slug already exists! Please choose another one.");
+        console.warn("Slug already exists! Please choose another one.");
       } else {
         console.error("Slug check failed", err);
       }
@@ -90,7 +90,7 @@ function AddProduct() {
       );
 
       console.log("Product Added:", response.data);
-      alert("Product added successfully!");
+      console.log("Product added successfully!");
 
       // ✅ FORM RESET (ONLY ADDITION)
       setData(emptyForm);
@@ -98,7 +98,7 @@ function AddProduct() {
 
     } catch (error) {
       console.error(error);
-      alert("Something went wrong!");
+      console.error("Something went wrong!", error);
     }
   }
 

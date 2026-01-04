@@ -15,17 +15,25 @@ export default function Settings() {
   }, []);
 
   async function fetchProducts() {
+
     const res = await instance.get("/product");
     setProducts(res.data);
   }
 
+  /* ================= DELETE ================= */
+
+
   async function handleDelete(id) {
     if (!confirm("Delete this product permanently?")) return;
-    await instance.delete(`/product/${id}`);
+
+    await instance.delete(`/product/${id}`, {
+      withCredentials: true, // 🔥 REQUIRED
+    });
+
     fetchProducts();
   }
 
-  /* ================= EDIT FLOW ================= */
+  /* ================= EDIT ================= */
 
   function openEditModal(product) {
     setEditProduct(product);
@@ -51,35 +59,39 @@ export default function Settings() {
     }
   }
 
+  /* ================= UPDATE ================= */
+
   async function handleUpdate() {
     try {
       const data = new FormData();
 
       data.append("name", formData.name);
       data.append("category", formData.category);
-      data.append(
-        "discountedPrice",
-        Number(formData.discountedPrice)
-      );
+      data.append("discountedPrice", Number(formData.discountedPrice));
       data.append("description", formData.description);
 
-      // ✅ IMAGE KEY MATCH MULTER
+      // 🔥 FIELD NAME MUST MATCH multer.single("image")
       if (formData.image) {
-        data.append("img", formData.image);
+        data.append("image", formData.image);
       }
 
-      await instance.put(`/product/${editProduct._id}`, data);
+      await instance.put(
+        `/product/${editProduct._id}`,
+        data,
+        {
+          withCredentials: true, // 🔥 MOST IMPORTANT FIX
+        }
+      );
 
-      alert("Product updated successfully ✅");
+      console.log("Product updated successfully ✅");
       closeModal();
       fetchProducts();
+
     } catch (err) {
       console.error("UPDATE ERROR:", err.response?.data || err.message);
-      alert("Update failed ❌");
+      console.error(err.response?.data?.message || "Update failed ❌");
     }
   }
-
-
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -161,7 +173,6 @@ export default function Settings() {
 
             <h3 className="text-xl font-bold mb-4">Edit Product</h3>
 
-            {/* IMAGE */}
             <img
               src={imagePreview}
               className="w-full h-40 object-cover rounded mb-3"
@@ -169,7 +180,6 @@ export default function Settings() {
 
             <input type="file" onChange={handleImageChange} />
 
-            {/* INPUTS */}
             <input
               className="w-full border p-2 mt-3"
               name="name"

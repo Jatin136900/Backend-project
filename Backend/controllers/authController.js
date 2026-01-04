@@ -49,12 +49,16 @@ export async function loginUsers(req, res) {
             { expiresIn: "3h" }
         );
 
+
+        const isProd = process.env.NODE_ENV === "production";
+
         res.cookie("auth_token", auth_token, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            maxAge: 3600000,
+            secure: isProd,              // localhost → false
+            sameSite: isProd ? "none" : "lax",
+            maxAge: 3 * 60 * 60 * 1000,
         });
+
 
         return res.status(200).json({ message: "Login Successful" });
 
@@ -65,10 +69,12 @@ export async function loginUsers(req, res) {
 
 export async function logoutUsers(req, res) {
     try {
+        const isProd = process.env.NODE_ENV === "production";
+
         res.clearCookie("auth_token", {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
         });
 
         return res.status(200).json({
@@ -234,7 +240,35 @@ export async function githubLogin(req, res) {
 }
 
 
+// export async function checkLogin(req, res) {
+//     try {
+//         const token = req.cookies.auth_token;
+
+//         if (!token) {
+//             return res.status(401).json({ loggedIn: false });
+//         }
+
+//         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+//         const user = await Auth.findById(decoded.id).select("-password");
+
+//         if (!user) {
+//             return res.status(401).json({ loggedIn: false });
+//         }
+
+//         return res.status(200).json({
+//             loggedIn: true,
+//             user,
+//         });
+//     } catch (error) {
+//         return res.status(401).json({ loggedIn: false });
+//     }
+// }
+
+
 
 
 export async function updateUsers(req, res) { }
+
+
 

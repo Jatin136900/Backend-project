@@ -20,33 +20,37 @@ export async function checkAuth(req, res, next) {
 
 
 export async function checkForlogin(req, res) {
-
     try {
-        if (!req.query)
+        const { referer } = req.query;
+
+        if (!referer) {
             return res.status(422).json({
                 message: "no referer query parameter, access denied"
-            })
+            });
+        }
 
         let token;
 
-        if (req.query.referer === "admin") token = req.cookies.admin_token;
-        if (req.query.referer === "user") token = req.cookies.auth_token;
+        if (referer === "admin") token = req.cookies.admin_token;
+        if (referer === "user") token = req.cookies.auth_token;
 
         if (!token) {
-            return res.status(401).json({ message: "no authentication token, accesss denied" })
+            return res.status(401).json({ message: "no authentication token, access denied" });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_secret)
-        if (decoded.role === req.query.referer) {
-            return res.status(200).json({ message: "token verified" })
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        if (decoded.role !== referer) {
+            return res.status(403).json({ message: "role mismatch, access denied" });
         }
 
-    }
+        return res.status(200).json({ message: "token verified" });
 
-    catch (error) {
-        return res.status(500).json({ message: error.message })
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid token" });
     }
 }
+
 
 export function checkAdmin(req, res, next) {
     try {

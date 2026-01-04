@@ -4,7 +4,9 @@ import { useAuth } from "../contexts/AuthProvider";
 import FullScreenLoader from "../components/FullScreenLoader";
 import instance from "../axios.Config"; // ✅ AXIOS INSTANCE
 import { GoogleLogin } from "@react-oauth/google";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Login() {
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ function Login() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   /* ======================
      HANDLE INPUT CHANGE
@@ -36,18 +39,15 @@ function Login() {
     setErrorMsg("");
 
     try {
-      // ✅ INSTANCE USED (NO FULL URL, NO withCredentials)
       const response = await instance.post("/api/auth/login", data);
 
-      // // ✅ AUTH STATE
-      // setIsLoggedIn(true);
-      // setLoggedinUser(response.data.user);
+      console.log("User Login Successful!");
 
-      alert("User Login Successful!");
+      // ✅ SUCCESS TOAST
+      toast.success("User login successfully");
 
       checkIsLoggedIn();
 
-      // ⏳ Loader Delay
       setTimeout(() => {
         const redirectTo = location.state?.redirectTo || "/";
         navigate(redirectTo);
@@ -56,6 +56,13 @@ function Login() {
 
     } catch (error) {
       setLoading(false);
+
+      // ❌ ERROR TOAST
+      toast.error(
+        error.response?.data?.message ||
+        "Wrong details, please check your information"
+      );
+
       setErrorMsg(
         error.response?.data?.message || "Login failed"
       );
@@ -68,19 +75,16 @@ function Login() {
         token: credentialResponse.credential,
       });
 
-      alert("Google login successful");
+      toast.success("Google login successful");
       navigate("/");
     } catch (error) {
+      toast.error("Google login failed");
       console.error(error);
-      alert("Google login failed");
     }
   }
 
-
-
   function handleGithubLogin() {
     const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
-
     const redirectUri = "http://localhost:5173/github-callback";
 
     window.location.href =
@@ -90,12 +94,11 @@ function Login() {
       `&scope=user:email read:user`;
   }
 
-
-
-
-
   return (
     <>
+      {/* 🔔 TOAST CONTAINER */}
+      <ToastContainer position="top-right" autoClose={2000} />
+
       {/* 🔥 FULL SCREEN LOADER */}
       {loading && <FullScreenLoader />}
 
@@ -131,20 +134,25 @@ function Login() {
               />
             </div>
 
-            {/* PASSWORD */}
-            <div>
-              <label className="block mb-1 text-sm font-medium text-gray-600">
-                Password
-              </label>
+            {/* PASSWORD WITH EYE */}
+            <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 value={data.password}
                 onChange={handleChange}
                 required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition pr-10"
                 placeholder="Enter your password"
               />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
             </div>
 
             {/* LOGIN BUTTON */}
@@ -160,6 +168,7 @@ function Login() {
             >
               {loading ? "Please wait..." : "Login"}
             </button>
+
             <div className="flex justify-center">
               <div className="w-full">
                 <GoogleLogin
@@ -183,8 +192,6 @@ function Login() {
               </button>
             </div>
 
-
-
             {/* REGISTER LINK */}
             <p className="text-center text-sm text-gray-600">
               Don’t have an account?{" "}
@@ -195,7 +202,6 @@ function Login() {
                 Register
               </NavLink>
             </p>
-
 
           </form>
         </div>

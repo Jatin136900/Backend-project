@@ -25,7 +25,7 @@ export default function AdminLogin() {
         { withCredentials: true }
       );
 
-      alert("Admin Login Successful!");
+      console.log("Admin Login Successful!");
       navigate("/admin/dashboard");
     } catch (err) {
       setErrorMsg(err.response?.data?.message || "Login failed");

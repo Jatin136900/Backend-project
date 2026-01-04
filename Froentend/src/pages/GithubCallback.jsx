@@ -19,7 +19,7 @@ export default function GithubCallback() {
         navigate("/");
       } catch (error) {
         console.error(error);
-        alert("GitHub login failed");
+        console.error("GitHub login failed", error);
         navigate("/login");
       }
     }

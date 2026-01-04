@@ -3,10 +3,9 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import instance from "../axios.Config";
 import { useAuth } from "../contexts/AuthProvider";
+import { toast } from "react-toastify";
 
 function ProductCard({ product }) {
-  // if (!product) return null;
-
   const navigate = useNavigate();
   const { updateCartCount } = useAuth();
   const [adding, setAdding] = useState(false);
@@ -27,7 +26,7 @@ function ProductCard({ product }) {
       );
 
       if (alreadyAdded) {
-        alert("Product already in cart");
+        toast.info("Product already in cart");
         return;
       }
 
@@ -37,15 +36,18 @@ function ProductCard({ product }) {
       });
 
       updateCartCount("add", 1);
-      alert("Added to cart 🛒");
+      toast.success("Added to cart");
 
     } catch (err) {
       if (err.response?.status === 401) {
+        toast.warning("Please login to add items to cart");
+
         navigate("/login", {
           state: { redirectTo: "/" },
         });
       } else {
-        alert("Something went wrong");
+        toast.error("Something went wrong");
+        console.error("Something went wrong", err);
       }
     } finally {
       setAdding(false);
@@ -55,7 +57,7 @@ function ProductCard({ product }) {
   return (
     <div className="bg-white rounded-2xl shadow-md p-5 hover:shadow-xl transition duration-300">
 
-      {/* IMAGE + NAME (CLICKABLE) */}
+      {/* IMAGE + NAME */}
       <Link to={`/product/${product.slug || product._id}`}>
         <div className="flex justify-center">
           <img
@@ -63,7 +65,7 @@ function ProductCard({ product }) {
             alt={product.name}
             className="w-48 h-48 object-contain"
             onError={(e) => {
-              e.target.src = "/no-image.png"; // 🔥 fallback image
+              e.target.src = "/no-image.png";
             }}
           />
         </div>
