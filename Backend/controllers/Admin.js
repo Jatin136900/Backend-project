@@ -31,7 +31,7 @@ export async function loginAdmin(req, res) {
         const admin_token = jwt.sign(
             { id: admin._id, role: admin.role },
             process.env.JWT_SECRET,
-            { expiresIn: "9h" }
+            { expiresIn: "1d" }
         );
 
         const isProd = process.env.NODE_ENV === 'production';
@@ -39,7 +39,7 @@ export async function loginAdmin(req, res) {
             httpOnly: true,
             secure: isProd,               // ✔ true in production; localhost may be treated as secure in modern browsers
             sameSite: isProd ? "none" : "lax", // ✔ use None for cross-site in production
-            maxAge: 9 * 60 * 60 * 1000
+            maxAge: 24 * 60 * 60 * 1000
         });
 
         return res.status(200).json({ message: "Admin Login successful" });
