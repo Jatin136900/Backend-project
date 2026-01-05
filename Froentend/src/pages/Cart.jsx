@@ -14,20 +14,20 @@ export default function Cart() {
   const [couponError, setCouponError] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
 
+  const { updateCartCount, fetchCart } = useAuth();
   const navigate = useNavigate();
-  const { updateCartCount } = useAuth();
 
   useEffect(() => {
-    fetchCart();
+    loadCart();
   }, []);
 
   /* ======================
-     FETCH CART
+     FETCH CART (FIXED)
   ====================== */
-  async function fetchCart() {
+  async function loadCart() {
     try {
-      const res = await instance.get("/cart");
-      setCart(res.data);
+      const data = await fetchCart(); // ✅ context se data
+      setCart(data);                  // ✅ local state
     } catch (err) {
       if (err.response?.status === 401) {
         navigate("/login", { state: { redirectTo: "/cart" } });
@@ -139,7 +139,7 @@ export default function Cart() {
   }
 
   /* ======================
-     UI
+     UI (UNCHANGED)
   ====================== */
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">

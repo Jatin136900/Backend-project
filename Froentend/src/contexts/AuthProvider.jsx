@@ -12,12 +12,12 @@ function AuthProvider({ children }) {
 
   useEffect(() => {
     checkIsLoggedIn();
-    // fetchCartCount();
+    fetchCartCount();
   }, []);
 
-
-
-
+  /* ======================
+     CHECK LOGIN
+  ====================== */
   async function checkIsLoggedIn() {
     try {
       const response = await instance.get(
@@ -28,7 +28,6 @@ function AuthProvider({ children }) {
       if (response.status === 200) {
         setIsLoggedIn(true);
         setLoggedinUser(response.data.user);
-        // ❌ fetchCartCount() yahan nahi
       }
     } catch (error) {
       setIsLoggedIn(false);
@@ -37,12 +36,11 @@ function AuthProvider({ children }) {
     }
   }
 
-
-
-
-
+  /* ======================
+     CART COUNT UPDATE
+  ====================== */
   function updateCartCount(type, qty = 1) {
-    setCartCount(prev => {
+    setCartCount((prev) => {
       if (type === "add") return prev + qty;
       if (type === "remove") return Math.max(prev - qty, 0);
       if (type === "reset") return 0;
@@ -50,6 +48,9 @@ function AuthProvider({ children }) {
     });
   }
 
+  /* ======================
+     LOGOUT
+  ====================== */
   async function logout() {
     try {
       await instance.post(
@@ -66,7 +67,23 @@ function AuthProvider({ children }) {
     }
   }
 
-  // ✅ BACKEND → CART COUNT SYNC
+  /* ======================
+     FETCH CART (NO NAVIGATE)
+  ====================== */
+  async function fetchCart() {
+    try {
+      const res = await instance.get("/cart", {
+        withCredentials: true,
+      });
+      return res.data;          // ✅ RETURN DATA ONLY
+    } catch (err) {
+      throw err;                // ✅ ERROR PAGE HANDLE KAREGA
+    }
+  }
+
+  /* ======================
+     CART COUNT FROM BACKEND
+  ====================== */
   async function fetchCartCount() {
     try {
       const res = await instance.get("/cart", {
@@ -84,9 +101,9 @@ function AuthProvider({ children }) {
     }
   }
 
-  // (kept for backward compatibility – use mat karna)
+  // ⚠️ legacy (avoid using)
   function increaseCart(qty = 1) {
-    setCartCount(prev => prev + qty);
+    setCartCount((prev) => prev + qty);
   }
 
   function resetCart() {
@@ -102,13 +119,14 @@ function AuthProvider({ children }) {
         setLoggedinUser,
         checkIsLoggedIn,
 
-        // ✅ CART (USE THESE)
+        // ✅ CART
         cartCount,
         updateCartCount,
+        fetchCart,
         fetchCartCount,
         resetCart,
 
-        // ⚠️ legacy (avoid using)
+        // ⚠️ legacy
         increaseCart,
 
         logout,

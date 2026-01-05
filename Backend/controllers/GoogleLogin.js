@@ -18,19 +18,23 @@ export const googleLogin = async (req, res) => {
     let user = await Auth.findOne({ email });
 
     if (!user) {
-      // REGISTER
+      // ✅ REGISTER NEW GOOGLE USER WITH ROLE
       user = await Auth.create({
         name,
         email,
         googleId: sub,
         image: picture,
         authProvider: "google",
+        role: "user",        // ✅ DEFAULT ROLE
       });
     }
 
-    // LOGIN
+    // ✅ LOGIN TOKEN (ROLE INCLUDED)
     const authToken = jwt.sign(
-      { id: user._id },
+      {
+        id: user._id,
+        role: user.role,     // ✅ ROLE ADDED
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -39,10 +43,14 @@ export const googleLogin = async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: "none",
-      maxAge: 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
-    res.status(200).json({ message: "Login success", user });
+    res.status(200).json({
+      message: "Login success",
+      user,
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
