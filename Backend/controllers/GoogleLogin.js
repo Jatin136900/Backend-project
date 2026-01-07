@@ -1,9 +1,3 @@
-import { OAuth2Client } from "google-auth-library";
-import Auth from "../models/Auth.js";
-import jwt from "jsonwebtoken";
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 export const googleLogin = async (req, res) => {
   try {
     const { token } = req.body;
@@ -17,23 +11,29 @@ export const googleLogin = async (req, res) => {
 
     let user = await Auth.findOne({ email });
 
+    // 🆕 REGISTER
     if (!user) {
-      // ✅ REGISTER NEW GOOGLE USER WITH ROLE
       user = await Auth.create({
         name,
         email,
         googleId: sub,
         image: picture,
         authProvider: "google",
-        role: "user",        // ✅ DEFAULT ROLE
+        role: "user",
       });
     }
 
-    // ✅ LOGIN TOKEN (ROLE INCLUDED)
+    // 🛠️ FIX OLD GOOGLE USERS (ROLE MISSING)
+    if (!user.role) {
+      user.role = "user";
+      await user.save();
+    }
+
+    // 🔐 TOKEN WITH ROLE
     const authToken = jwt.sign(
       {
         id: user._id,
-        role: user.role,     // ✅ ROLE ADDED
+        role: user.role,
       },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
@@ -43,7 +43,7 @@ export const googleLogin = async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: "none",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({

@@ -4,12 +4,9 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import "dotenv/config";
 
-
-
-
-
-
-
+/* ======================
+   ADMIN LOGIN
+====================== */
 export async function loginAdmin(req, res) {
     try {
         const { email, password } = req.body;
@@ -34,29 +31,30 @@ export async function loginAdmin(req, res) {
             { expiresIn: "1d" }
         );
 
-        const isProd = process.env.NODE_ENV === 'production';
+        const isProd = process.env.NODE_ENV === "production";
+
         res.cookie("admin_token", admin_token, {
             httpOnly: true,
-            secure: isProd,               // ✔ true in production; localhost may be treated as secure in modern browsers
-            sameSite: isProd ? "none" : "lax", // ✔ use None for cross-site in production
-            maxAge: 24 * 60 * 60 * 1000
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
+            maxAge: 24 * 60 * 60 * 1000,
         });
 
-        return res.status(200).json({ message: "Admin Login successful" });
-
+        return res.status(200).json({ message: "Admin login successful" });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
 }
 
-
-
+/* ======================
+   ADMIN LOGOUT
+====================== */
 export async function logoutAdmin(req, res) {
     try {
         res.clearCookie("admin_token", {
             httpOnly: true,
             secure: false,
-            sameSite: "lax"
+            sameSite: "lax",
         });
 
         return res.status(200).json({ message: "Logout successful" });
@@ -65,7 +63,33 @@ export async function logoutAdmin(req, res) {
     }
 }
 
+/* ======================
+   BLOCK / UNBLOCK USER
+====================== */
+export async function toggleBlockUser(req, res) {
+    try {
+        const { id } = req.params;
+        
 
+        const user = await Auth.findById(id);
+        console.log(user)
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
+        // 🚫 Admin ko block mat karna
+        if (user.role === "admin") {
+            return res.status(403).json({ message: "Cannot block admin" });
+        }
 
-export async function updateAdmin(req, res) { }
+        user.isBlocked = !user.isBlocked;
+        await user.save();
+
+        return res.status(200).json({
+            message: user.isBlocked ? "User blocked" : "User unblocked",
+            user,
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+}
