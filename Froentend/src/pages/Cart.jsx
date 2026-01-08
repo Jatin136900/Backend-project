@@ -16,6 +16,8 @@ export default function Cart() {
 
   const { updateCartCount, fetchCart } = useAuth();
   const navigate = useNavigate();
+  const BASEURL = import.meta.env.VITE_BASEURL
+
 
   useEffect(() => {
     loadCart();
@@ -161,7 +163,9 @@ export default function Cart() {
             {/* LEFT */}
             <div className="flex items-center gap-4">
               <img
-                src={`${import.meta.env.VITE_BASEURL}/${item.productId.img}`}
+                src={item.productId.img?.startsWith("http")
+                  ? item.productId.img
+                  : `${BASEURL}/${item.productId.img}`}
                 alt={item.productId.name}
                 className="w-20 h-20 object-contain"
               />

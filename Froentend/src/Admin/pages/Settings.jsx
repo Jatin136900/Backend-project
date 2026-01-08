@@ -9,6 +9,8 @@ export default function Settings() {
   const [imagePreview, setImagePreview] = useState(null);
 
   const FRONTEND_URL = import.meta.env.VITE_BASEURL;
+  const BASEURL = import.meta.env.VITE_BASEURL
+
 
   useEffect(() => {
     fetchProducts();
@@ -115,7 +117,9 @@ export default function Settings() {
             {/* IMAGE */}
             <div className="w-24 h-24 shrink-0">
               <img
-                src={`${FRONTEND_URL}/${p.img}`}
+                src={p.img?.startsWith("http")
+                  ? p.img
+                  : `${BASEURL}/${p.img}`}
                 className="w-full h-full object-cover"
               />
             </div>

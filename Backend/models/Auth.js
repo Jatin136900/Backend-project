@@ -60,5 +60,5 @@ const authSchema = new Schema(
     { timestamps: true }
 );
 
-const Auth = model("auth", authSchema);
+const Auth = model("auth", authSchema,"auth");
 export default Auth;

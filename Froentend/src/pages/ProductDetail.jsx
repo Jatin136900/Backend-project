@@ -19,6 +19,9 @@ const ProductDetail = () => {
   const [error, setError] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
 
+  const BASEURL = import.meta.env.VITE_BASEURL
+
+
   console.log(isLoggedIn);
 
   useEffect(() => {
@@ -95,7 +98,7 @@ const ProductDetail = () => {
 
       if (alreadyAdded) {
         setAddedToCart(true);
-        navigate("/cart"); 
+        navigate("/cart");
         return;
       }
 
@@ -166,7 +169,9 @@ const ProductDetail = () => {
         {/* IMAGE */}
         <div className="flex justify-center">
           <img
-            src={`${import.meta.env.VITE_BASEURL}/${product.img}`}
+            src={product.img?.startsWith("http")
+              ? product.img
+              : `${BASEURL}/${product.img}`}
             alt={product.name}
             className="w-96 object-contain"
           />

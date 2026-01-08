@@ -5,11 +5,14 @@ import instance from "../axios.Config";
 import { useAuth } from "../contexts/AuthProvider";
 import { toast } from "react-toastify";
 
+
 function ProductCard({ product }) {
   const navigate = useNavigate();
   const { updateCartCount } = useAuth();
   const [adding, setAdding] = useState(false);
 
+  const BASEURL = import.meta.env.VITE_BASEURL
+  console.log(product)
   /* ======================
      ADD TO CART
   ====================== */
@@ -61,7 +64,9 @@ function ProductCard({ product }) {
       <Link to={`/product/${product.slug || product._id}`}>
         <div className="flex justify-center">
           <img
-            src={`${import.meta.env.VITE_BASEURL}/${product.img}`}
+            src={product.img?.startsWith("http")
+              ? product.img
+              : `${BASEURL}/${product.img}`}
             alt={product.name}
             className="w-48 h-48 object-contain"
             onError={(e) => {
