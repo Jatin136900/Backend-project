@@ -5,27 +5,22 @@ import { useAuth } from "../contexts/AuthProvider";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 const ProductDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  // ✅ SINGLE useAuth call (clean)
-  const {
-    isLoggedIn,
-    updateCartCount,
-  } = useAuth();
+  // ✅ Auth
+  const { isLoggedIn, updateCartCount } = useAuth();
 
+  // ✅ States
   const [product, setProduct] = useState(null);
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
-  const BASEURL = import.meta.env.VITE_BASEURL
-
-
-  console.log(isLoggedIn);
+  const BASEURL = import.meta.env.VITE_BASEURL;
 
   useEffect(() => {
     fetchProduct();
@@ -45,6 +40,9 @@ const ProductDetail = () => {
       }
 
       setProduct(res.data);
+
+      // 🔥 AI RELATED PRODUCTS CALL
+      fetchRelatedProducts(res.data);
     } catch (err) {
       setError("Something went wrong");
     } finally {
@@ -53,44 +51,26 @@ const ProductDetail = () => {
   }
 
   /* ======================
+     FETCH AI RELATED PRODUCTS
+  ====================== */
+  async function fetchRelatedProducts(prod) {
+    try {
+      const res = await instance.post("/api/ai/related-products", {
+        name: prod.name,
+        category: prod.category,
+        description: prod.description,
+        productId: prod._id,
+      });
+
+      setRelatedProducts(res.data || []);
+    } catch (err) {
+      console.log("AI related product error", err);
+    }
+  }
+
+  /* ======================
      ADD TO CART
   ====================== */
-  // async function handleAddToCart() {
-  //   try {
-  //     // 🔥 Cart fetch via instance
-  //     const cartRes = await instance.get("/cart");
-
-  //     const alreadyAdded = cartRes.data.products.find(
-  //       (item) => item.productId._id === product._id
-  //     );
-
-  //     if (alreadyAdded) {
-  //       console.log("You have already added this product");
-  //       setAddedToCart(true);
-  //       return;
-  //     }
-
-  //     // 🔥 Add to cart
-  //     await instance.post("/cart/add", {
-  //       productId: product._id,
-  //       qty,
-  //     });
-
-  //     updateCartCount("add", qty);
-  //     setAddedToCart(true);
-
-  //     navigate("/Product/" + slug);
-
-  //   } catch (err) {
-  //     // 🔐 Not logged in → redirect to login
-  //     if (err.response?.status === 401) {
-  //       navigate("/login", {
-  //         state: { redirectTo: "/Product/" + slug },
-  //       });
-  //     }
-  //   }
-  // }
-
   async function handleAddToCart() {
     try {
       const cartRes = await instance.get("/cart");
@@ -100,7 +80,6 @@ const ProductDetail = () => {
       );
 
       if (alreadyAdded) {
-        // setAddedToCart(true);
         toast.info("Product already in cart");
         navigate("/cart");
         return;
@@ -112,12 +91,8 @@ const ProductDetail = () => {
       });
 
       updateCartCount("add", qty);
-      // setAddedToCart(true);
       toast.success("Added to cart 🛒");
-
-
-      navigate("/cart"); // 👈 ADD TO CART ke baad direct CART page
-
+      navigate("/cart");
     } catch (err) {
       if (err.response?.status === 401) {
         navigate("/login", {
@@ -128,7 +103,6 @@ const ProductDetail = () => {
       }
     }
   }
-
 
   /* ======================
      LOADING
@@ -167,7 +141,6 @@ const ProductDetail = () => {
     <>
       <ToastContainer position="top-right" autoClose={2000} />
 
-
       <div className="min-h-screen bg-gray-50 p-8">
         <Link
           to="/product"
@@ -176,14 +149,16 @@ const ProductDetail = () => {
           ← Back to Products
         </Link>
 
+        {/* PRODUCT DETAIL */}
         <div className="bg-white rounded-2xl shadow-lg p-8 grid md:grid-cols-2 gap-10">
-
           {/* IMAGE */}
           <div className="flex justify-center">
             <img
-              src={product.img?.startsWith("http")
-                ? product.img
-                : `${BASEURL}/${product.img}`}
+              src={
+                product.img?.startsWith("http")
+                  ? product.img
+                  : `${BASEURL}/${product.img}`
+              }
               alt={product.name}
               className="w-96 object-contain"
             />
@@ -198,9 +173,6 @@ const ProductDetail = () => {
               ₹{product.discountedPrice}
             </p>
 
-            {/* <p className="mb-6">Category: {product.category}</p> */}
-
-
             <p className="mb-6">
               Category:{" "}
               <Link
@@ -212,7 +184,6 @@ const ProductDetail = () => {
                   .replace(/\b\w/g, (c) => c.toUpperCase())}
               </Link>
             </p>
-
 
             {/* QTY */}
             <div className="flex items-center gap-4 mb-6">
@@ -237,8 +208,8 @@ const ProductDetail = () => {
             <button
               onClick={handleAddToCart}
               disabled={addedToCart}
-              className={`w-full cursor-pointer py-3 rounded-xl text-lg font-semibold transition
-              ${addedToCart
+              className={`w-full py-3 rounded-xl text-lg font-semibold transition
+                ${addedToCart
                   ? "bg-green-500 text-white cursor-not-allowed"
                   : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
@@ -247,9 +218,40 @@ const ProductDetail = () => {
             </button>
           </div>
         </div>
+
+        {/* 🔥 AI RELATED PRODUCTS */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-20">
+            <h2 className="text-2xl font-bold mb-6">
+               Recommended Products
+            </h2>
+
+            <div className="grid md:grid-cols-4 gap-6">
+              {relatedProducts.map((item) => (
+                <Link
+                  to={`/product/${item.slug}`}
+                  key={item._id}
+                  className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition"
+                >
+                  <img
+                    src={
+                      item.img?.startsWith("http")
+                        ? item.img
+                        : `${BASEURL}/${item.img}`
+                    }
+                    className="h-40 w-full object-contain mb-3"
+                  />
+                  <h3 className="font-semibold">{item.name}</h3>
+                  <p className="text-red-600 font-bold">
+                    ₹{item.discountedPrice}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
-
   );
 };
 
