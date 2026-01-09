@@ -54,11 +54,19 @@ const authSchema = new Schema(
             default: false,
         },
 
+        // 🔥 ADD FOR LOGIN OTP
+        loginOtp: {
+            type: String,
+        },
+
+        loginOtpExpiry: {
+            type: Date,
+        },
 
 
     },
     { timestamps: true }
 );
 
-const Auth = model("auth", authSchema,"auth");
+const Auth = model("auth", authSchema, "auth");
 export default Auth;

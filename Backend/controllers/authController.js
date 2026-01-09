@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import "dotenv/config";
 import axios from "axios";
+import { createHash } from "crypto";
+import { sendOTPEmail } from '../utils/SendEmail.js';
 
 
 export async function getUsers(req, res) {
@@ -111,15 +113,24 @@ export async function registerUser(req, res) {
         // assign default role
         data.role = "user";   // 🔥 MOST IMPORTANT LINE
 
+        
         // hash password
         const hashedPassword = await bcrypt.hash(data.password, 10);
         data.password = hashedPassword;
-
+        
         const newUser = new Auth(data);
         await newUser.save();
 
+        
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedOtp = createHash("sha256").update(otp).digest("hex");
+        data.otp = hashedOtp;
+        data.otpExpiry = Date.now() + 10 * 60 * 1000;
+
+        await sendOTPEmail(data.email, data.name, otp);
+
         return res.status(201).json({
-            message: "User registered successfully",
+            message: "User registered successfully. Verification email sent.",
             user: newUser
         });
 
@@ -158,11 +169,6 @@ export async function deleteUsers(req, res) {
         });
     }
 }
-
-
-
-
-
 
 export async function githubLogin(req, res) {
     try {
@@ -239,36 +245,93 @@ export async function githubLogin(req, res) {
     }
 }
 
+export async function verifyEmail(req, res) {
+    try {
+        const { token } = req.query;
 
-// export async function checkLogin(req, res) {
-//     try {
-//         const token = req.cookies.auth_token;
+        const user = await Auth.findOne({
+            emailVerifyToken: token,
+            emailVerifyExpiry: { $gt: Date.now() }
+        });
 
-//         if (!token) {
-//             return res.status(401).json({ loggedIn: false });
-//         }
+        if (!user) {
+            return res.status(400).send("Invalid or expired verification link");
+        }
 
-//         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        user.isVerified = true;
+        user.emailVerifyToken = undefined;
+        user.emailVerifyExpiry = undefined;
 
-//         const user = await Auth.findById(decoded.id).select("-password");
+        await user.save();
 
-//         if (!user) {
-//             return res.status(401).json({ loggedIn: false });
-//         }
+        // Redirect to login page
+        res.redirect("http://localhost:5173/login");
 
-//         return res.status(200).json({
-//             loggedIn: true,
-//             user,
-//         });
-//     } catch (error) {
-//         return res.status(401).json({ loggedIn: false });
-//     }
-// }
+    } catch (error) {
+        console.error("Verify Email Error:", error);
+        res.status(500).send("Server error");
+    }
+}
+
+export async function sendLoginOTP(req, res) {
+  try {
+    const { email } = req.body;
+
+    const user = await Auth.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    user.loginOtp = createHash("sha256").update(otp).digest("hex");
+    user.loginOtpExpiry = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    await sendOTPEmail(user.email, user.name, otp);
+
+    return res.status(200).json({ message: "Login OTP sent" });
+
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function verifyLoginOTP(req, res) {
+  try {
+    const { email, otp } = req.body;
+
+    const hashedOtp = createHash("sha256").update(otp).digest("hex");
+
+    const user = await Auth.findOne({
+      email,
+      loginOtp: hashedOtp,
+      loginOtpExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    user.loginOtp = undefined;
+    user.loginOtpExpiry = undefined;
+
+    await user.save();
+
+    return res.status(200).json({ message: "OTP verified" });
+
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
 
 
 
 
 export async function updateUsers(req, res) { }
+
+
 
 
 

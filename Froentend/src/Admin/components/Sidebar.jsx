@@ -33,6 +33,10 @@ export default function Sidebar() {
         <NavLink to="/admin/coupon" className={linkClasses}>
           Create Coupon
         </NavLink>
+
+        <NavLink to="/admin/category" className={linkClasses}>
+          Add Category
+        </NavLink>
       </nav>
     </div>
   );

@@ -3,6 +3,10 @@ import instance from "../axios.Config";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
 
+// 🔹 Toastify
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 export default function Cart() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,22 +20,22 @@ export default function Cart() {
 
   const { updateCartCount, fetchCart } = useAuth();
   const navigate = useNavigate();
-  const BASEURL = import.meta.env.VITE_BASEURL
-
+  const BASEURL = import.meta.env.VITE_BASEURL;
 
   useEffect(() => {
     loadCart();
   }, []);
 
   /* ======================
-     FETCH CART (FIXED)
+     FETCH CART
   ====================== */
   async function loadCart() {
     try {
-      const data = await fetchCart(); // ✅ context se data
-      setCart(data);                  // ✅ local state
+      const data = await fetchCart();
+      setCart(data);
     } catch (err) {
       if (err.response?.status === 401) {
+        toast.warning("Please login to view cart");
         navigate("/login", { state: { redirectTo: "/cart" } });
       }
     } finally {
@@ -47,14 +51,22 @@ export default function Cart() {
       const res = await instance.patch("/cart/qty", { productId, type });
       setCart(res.data);
 
+      // reset coupon
       setCouponApplied(false);
       setDiscount(0);
       setFinalPrice(0);
 
-      if (type === "inc") updateCartCount("add", 1);
-      if (type === "dec") updateCartCount("remove", 1);
+      if (type === "inc") {
+        updateCartCount("add", 1);
+        toast.success("Quantity increased");
+      }
+
+      if (type === "dec") {
+        updateCartCount("remove", 1);
+        toast.info("Quantity decreased");
+      }
     } catch (err) {
-      console.error("Unable to update quantity", err);
+      toast.error("Unable to update quantity");
     }
   }
 
@@ -70,13 +82,15 @@ export default function Cart() {
       const res = await instance.delete(`/cart/${productId}`);
       setCart(res.data);
 
+      // reset coupon
       setCouponApplied(false);
       setDiscount(0);
       setFinalPrice(0);
 
       updateCartCount("remove", item.quantity);
+      toast.success("Item removed from cart");
     } catch (err) {
-      console.error("Unable to remove item", err);
+      toast.error("Unable to remove item");
     }
   }
 
@@ -104,11 +118,20 @@ export default function Cart() {
       setDiscount(res.data.discountAmount);
       setFinalPrice(res.data.finalPrice);
       setCouponApplied(true);
+
+      toast.success(
+        `Coupon applied! You saved ₹${res.data.discountAmount}`
+      );
     } catch (error) {
+      const msg =
+        error.response?.data?.message || "Invalid coupon";
+
       setCouponApplied(false);
       setDiscount(0);
       setFinalPrice(0);
-      setCouponError(error.response?.data?.message || "Invalid coupon");
+      setCouponError(msg);
+
+      toast.error(msg);
     }
   }
 
@@ -136,12 +159,14 @@ export default function Cart() {
         >
           Continue Shopping
         </Link>
+
+        <ToastContainer position="top-right" autoClose={2000} />
       </div>
     );
   }
 
   /* ======================
-     UI (UNCHANGED)
+     UI
   ====================== */
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
@@ -163,9 +188,11 @@ export default function Cart() {
             {/* LEFT */}
             <div className="flex items-center gap-4">
               <img
-                src={item.productId.img?.startsWith("http")
-                  ? item.productId.img
-                  : `${BASEURL}/${item.productId.img}`}
+                src={
+                  item.productId.img?.startsWith("http")
+                    ? item.productId.img
+                    : `${BASEURL}/${item.productId.img}`
+                }
                 alt={item.productId.name}
                 className="w-20 h-20 object-contain"
               />
@@ -182,25 +209,35 @@ export default function Cart() {
             {/* RIGHT */}
             <div className="flex items-center gap-4">
               <button
-                onClick={() => changeQty(item.productId._id, "dec")}
+                onClick={() =>
+                  changeQty(item.productId._id, "dec")
+                }
                 className="px-3 py-1 bg-gray-200 rounded"
               >
                 −
               </button>
+
               <span>{item.quantity}</span>
+
               <button
-                onClick={() => changeQty(item.productId._id, "inc")}
+                onClick={() =>
+                  changeQty(item.productId._id, "inc")
+                }
                 className="px-3 py-1 bg-gray-200 rounded"
               >
                 +
               </button>
 
               <p className="font-bold">
-                ₹{item.productId.discountedPrice * item.quantity}
+                ₹
+                {item.productId.discountedPrice *
+                  item.quantity}
               </p>
 
               <button
-                onClick={() => removeItem(item.productId._id)}
+                onClick={() =>
+                  removeItem(item.productId._id)
+                }
                 className="bg-red-500 text-white px-4 py-2 rounded-lg"
               >
                 Remove
@@ -212,11 +249,14 @@ export default function Cart() {
         {/* COUPON */}
         <div className="mt-6 p-4 border rounded-xl">
           <h3 className="font-semibold mb-2">Apply Coupon</h3>
+
           <div className="flex gap-3">
             <input
               type="text"
               value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
+              onChange={(e) =>
+                setCouponCode(e.target.value)
+              }
               placeholder="Enter coupon code"
               className="border px-4 py-2 rounded-lg w-full"
             />
@@ -229,7 +269,9 @@ export default function Cart() {
           </div>
 
           {couponError && (
-            <p className="text-red-500 mt-2">{couponError}</p>
+            <p className="text-red-500 mt-2">
+              {couponError}
+            </p>
           )}
 
           {couponApplied && (
@@ -245,11 +287,24 @@ export default function Cart() {
             Total: ₹{couponApplied ? finalPrice : total}
           </h2>
 
-          <button className="bg-green-600 text-white px-8 py-3 rounded-xl text-lg">
+          <button
+            onClick={() => toast.success("Proceeding to checkout")}
+            className="bg-green-600 text-white px-8 py-3 rounded-xl text-lg"
+          >
             Checkout
           </button>
         </div>
       </div>
+
+      {/* TOAST */}
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 }

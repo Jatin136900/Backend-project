@@ -18,6 +18,9 @@ import Users from "./Admin/pages/Users";
 import Settings from "./Admin/pages/Settings";
 import Coupon from "./Admin/pages/Coupon";
 import AdminLayout from "./Admin/AdminLayout";
+import VerifyOtp from "./pages/VerifyOtp";
+import AddCategory from "./Admin/pages/AddCategory";
+import CategoryProducts from "./pages/CategoryProducts";
 
 const router = createBrowserRouter([
 
@@ -32,7 +35,9 @@ const router = createBrowserRouter([
       { path: "product", element: <Product /> },
       { path: "product/:slug", element: <ProductDetail /> },
       { path: "cart", element: <Cart /> },
-      { path: "github-callback", element: <GithubCallback /> }
+      { path: "github-callback", element: <GithubCallback /> },
+      { path: "/verify-otp", element: <VerifyOtp /> },
+      { path: "category/:slug",element:<CategoryProducts/>}
     ]
   },
 
@@ -47,6 +52,7 @@ const router = createBrowserRouter([
       { path: "users", element: <Users /> },
       { path: "settings", element: <Settings /> },
       { path: "coupon", element: <Coupon /> },
+      { path: "category", element: <AddCategory /> }
     ]
   }
 

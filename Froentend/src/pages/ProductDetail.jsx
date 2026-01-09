@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import instance from "../axios.Config";
 import { useAuth } from "../contexts/AuthProvider";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -97,7 +100,8 @@ const ProductDetail = () => {
       );
 
       if (alreadyAdded) {
-        setAddedToCart(true);
+        // setAddedToCart(true);
+        toast.info("Product already in cart");
         navigate("/cart");
         return;
       }
@@ -108,7 +112,9 @@ const ProductDetail = () => {
       });
 
       updateCartCount("add", qty);
-      setAddedToCart(true);
+      // setAddedToCart(true);
+      toast.success("Added to cart 🛒");
+
 
       navigate("/cart"); // 👈 ADD TO CART ke baad direct CART page
 
@@ -117,6 +123,8 @@ const ProductDetail = () => {
         navigate("/login", {
           state: { redirectTo: "/Product/" + slug },
         });
+      } else {
+        toast.error("Something went wrong");
       }
     }
   }
@@ -156,72 +164,92 @@ const ProductDetail = () => {
      UI
   ====================== */
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <Link
-        to="/product"
-        className="inline-block mb-6 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg"
-      >
-        ← Back to Products
-      </Link>
+    <>
+      <ToastContainer position="top-right" autoClose={2000} />
 
-      <div className="bg-white rounded-2xl shadow-lg p-8 grid md:grid-cols-2 gap-10">
 
-        {/* IMAGE */}
-        <div className="flex justify-center">
-          <img
-            src={product.img?.startsWith("http")
-              ? product.img
-              : `${BASEURL}/${product.img}`}
-            alt={product.name}
-            className="w-96 object-contain"
-          />
-        </div>
+      <div className="min-h-screen bg-gray-50 p-8">
+        <Link
+          to="/product"
+          className="inline-block mb-6 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg"
+        >
+          ← Back to Products
+        </Link>
 
-        {/* DETAILS */}
-        <div>
-          <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-          <p className="mb-4">{product.description}</p>
+        <div className="bg-white rounded-2xl shadow-lg p-8 grid md:grid-cols-2 gap-10">
 
-          <p className="text-red-600 text-3xl font-bold mb-2">
-            ₹{product.discountedPrice}
-          </p>
-
-          <p className="mb-6">Category: {product.category}</p>
-
-          {/* QTY */}
-          <div className="flex items-center gap-4 mb-6">
-            <button
-              onClick={() => qty > 1 && setQty(qty - 1)}
-              className="px-3 py-1 bg-gray-200 rounded"
-            >
-              −
-            </button>
-
-            <span className="text-lg font-semibold">{qty}</span>
-
-            <button
-              onClick={() => setQty(qty + 1)}
-              className="px-3 py-1 bg-gray-200 rounded"
-            >
-              +
-            </button>
+          {/* IMAGE */}
+          <div className="flex justify-center">
+            <img
+              src={product.img?.startsWith("http")
+                ? product.img
+                : `${BASEURL}/${product.img}`}
+              alt={product.name}
+              className="w-96 object-contain"
+            />
           </div>
 
-          {/* ADD TO CART */}
-          <button
-            onClick={handleAddToCart}
-            disabled={addedToCart}
-            className={`w-full cursor-pointer py-3 rounded-xl text-lg font-semibold transition
+          {/* DETAILS */}
+          <div>
+            <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+            <p className="mb-4">{product.description}</p>
+
+            <p className="text-red-600 text-3xl font-bold mb-2">
+              ₹{product.discountedPrice}
+            </p>
+
+            {/* <p className="mb-6">Category: {product.category}</p> */}
+
+
+            <p className="mb-6">
+              Category:{" "}
+              <Link
+                to={`/category/${product.category}`}
+                className="text-blue-600 font-semibold hover:underline"
+              >
+                {product.category
+                  .replace(/-/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase())}
+              </Link>
+            </p>
+
+
+            {/* QTY */}
+            <div className="flex items-center gap-4 mb-6">
+              <button
+                onClick={() => qty > 1 && setQty(qty - 1)}
+                className="px-3 py-1 bg-gray-200 rounded"
+              >
+                −
+              </button>
+
+              <span className="text-lg font-semibold">{qty}</span>
+
+              <button
+                onClick={() => setQty(qty + 1)}
+                className="px-3 py-1 bg-gray-200 rounded"
+              >
+                +
+              </button>
+            </div>
+
+            {/* ADD TO CART */}
+            <button
+              onClick={handleAddToCart}
+              disabled={addedToCart}
+              className={`w-full cursor-pointer py-3 rounded-xl text-lg font-semibold transition
               ${addedToCart
-                ? "bg-green-500 text-white cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
-          >
-            {addedToCart ? "✅ Added to Cart" : "Add to Cart 🛒"}
-          </button>
+                  ? "bg-green-500 text-white cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+            >
+              {addedToCart ? "✅ Added to Cart" : "Add to Cart 🛒"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
+
   );
 };
 
