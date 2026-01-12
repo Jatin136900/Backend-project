@@ -5,6 +5,9 @@ import { useAuth } from "../contexts/AuthProvider";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// ✅ AI CHAT COMPONENT
+import AIChatBox from "../components/Chat.jsx";
+
 const ProductDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -19,6 +22,9 @@ const ProductDetail = () => {
   const [error, setError] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
+
+  // 🆕 AI CHAT TOGGLE STATE (ONLY ADDITION)
+  const [showChat, setShowChat] = useState(false);
 
   const BASEURL = import.meta.env.VITE_BASEURL;
 
@@ -41,7 +47,7 @@ const ProductDetail = () => {
 
       setProduct(res.data);
 
-      // 🔥 AI RELATED PRODUCTS CALL
+      // 🔥 AI RELATED PRODUCTS
       fetchRelatedProducts(res.data);
     } catch (err) {
       setError("Something went wrong");
@@ -219,11 +225,40 @@ const ProductDetail = () => {
           </div>
         </div>
 
+        {/* 🤖 AI CHAT BUTTON (ADDED) */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={() => setShowChat(!showChat)}
+            className="
+      flex items-center gap-2
+      px-6 py-3
+      bg-blue-700 text-white
+      rounded-full
+      font-semibold
+      shadow-lg
+      hover:bg-blue-600
+      hover:scale-105
+      active:scale-95
+      transition-all duration-300
+      cursor-pointer
+    "
+          >
+            {showChat ? "❌ Close AI Chat" : "🤖 Ask AI"}
+          </button>
+        </div>
+
+        {/* 🤖 AI CHAT ABOUT PRODUCT (CONDITION ADDED) */}
+        {showChat && (
+          <div className="mt-8">
+            <AIChatBox productName={product.name} />
+          </div>
+        )}
+
         {/* 🔥 AI RELATED PRODUCTS */}
         {relatedProducts.length > 0 && (
           <div className="mt-20">
             <h2 className="text-2xl font-bold mb-6">
-               Recommended Products
+              Recommended Products
             </h2>
 
             <div className="grid md:grid-cols-4 gap-6">

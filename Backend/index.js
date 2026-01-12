@@ -14,6 +14,7 @@ import categoryRoutes from "./routes/Category.js";
 import aiRoutes from "./routes/aiRoutes.js";
 
 import path from "path";
+import chatRouter from "./routes/Chat.js";
 
 const app = express();
 app.use(express.json());
@@ -50,5 +51,9 @@ app.use("/coupon", couponRouter);
 app.use("/category", categoryRoutes);
 
 app.use("/api/ai", aiRoutes);
+
+app.use('/chat', chatRouter)
+
+
 
 app.listen(3000, () => console.log("Server started at port 3000"));

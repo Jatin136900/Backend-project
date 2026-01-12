@@ -5,4 +5,5 @@ const router = express.Router();
 
 router.post("/related-products", getRelatedProducts);
 
+
 export default router;

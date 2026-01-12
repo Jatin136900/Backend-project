@@ -1,5 +1,6 @@
 import Product from "../models/models.js";
 
+
 export const getRelatedProducts = async (req, res) => {
   try {
     const { category, productId } = req.body;
@@ -18,3 +19,7 @@ export const getRelatedProducts = async (req, res) => {
     res.status(500).json({ message: "Failed to load related products" });
   }
 };
+
+
+
+

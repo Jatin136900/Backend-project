@@ -17,6 +17,7 @@
     "axios": "^1.13.2",
     "cloudinary": "^2.8.0",
     "cookie": "^1.1.1",
+    "groq-sdk": "^0.37.0",
     "lucide-react": "^0.560.0",
     "Parser": "^0.0.1",
     "react": "^19.2.0",
