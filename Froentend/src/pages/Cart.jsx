@@ -51,7 +51,6 @@ export default function Cart() {
       const res = await instance.patch("/cart/qty", { productId, type });
       setCart(res.data);
 
-      // reset coupon
       setCouponApplied(false);
       setDiscount(0);
       setFinalPrice(0);
@@ -71,18 +70,19 @@ export default function Cart() {
   }
 
   /* ======================
-     REMOVE ITEM
+     REMOVE ITEM (SAFE)
   ====================== */
   async function removeItem(productId) {
     try {
       const item = cart.products.find(
-        (i) => i.productId._id === productId
+        (i) => i?.productId?._id === productId
       );
+
+      if (!item) return;
 
       const res = await instance.delete(`/cart/${productId}`);
       setCart(res.data);
 
-      // reset coupon
       setCouponApplied(false);
       setDiscount(0);
       setFinalPrice(0);
@@ -95,13 +95,13 @@ export default function Cart() {
   }
 
   /* ======================
-     TOTAL
+     TOTAL (SAFE)
   ====================== */
   const total =
-    cart?.products.reduce(
-      (sum, i) => sum + i.productId.discountedPrice * i.quantity,
-      0
-    ) || 0;
+    cart?.products.reduce((sum, i) => {
+      if (!i?.productId) return sum;
+      return sum + i.productId.discountedPrice * i.quantity;
+    }, 0) || 0;
 
   /* ======================
      APPLY COUPON
@@ -119,12 +119,9 @@ export default function Cart() {
       setFinalPrice(res.data.finalPrice);
       setCouponApplied(true);
 
-      toast.success(
-        `Coupon applied! You saved ₹${res.data.discountAmount}`
-      );
+      toast.success(`Coupon applied! You saved ₹${res.data.discountAmount}`);
     } catch (error) {
-      const msg =
-        error.response?.data?.message || "Invalid coupon";
+      const msg = error.response?.data?.message || "Invalid coupon";
 
       setCouponApplied(false);
       setDiscount(0);
@@ -166,7 +163,7 @@ export default function Cart() {
   }
 
   /* ======================
-     UI
+     UI (UNCHANGED)
   ====================== */
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
@@ -180,71 +177,71 @@ export default function Cart() {
 
       {/* CART BOX */}
       <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6">
-        {cart.products.map((item) => (
-          <div
-            key={item.productId._id}
-            className="flex flex-col lg:flex-row justify-between gap-6 py-6 border-b"
-          >
-            {/* LEFT */}
-            <div className="flex items-center gap-4">
-              <img
-                src={
-                  item.productId.img?.startsWith("http")
-                    ? item.productId.img
-                    : `${BASEURL}/${item.productId.img}`
-                }
-                alt={item.productId.name}
-                className="w-20 h-20 object-contain"
-              />
-              <div>
-                <h2 className="font-semibold text-lg">
-                  {item.productId.name}
-                </h2>
-                <p className="text-gray-500">
-                  ₹{item.productId.discountedPrice}
+        {cart.products
+          .filter(item => item?.productId)
+          .map((item) => (
+            <div
+              key={item.productId._id}
+              className="flex flex-col lg:flex-row justify-between gap-6 py-6 border-b"
+            >
+              {/* LEFT */}
+              <div className="flex items-center gap-4">
+                <img
+                  src={
+                    item.productId.img?.startsWith("http")
+                      ? item.productId.img
+                      : `${BASEURL}/${item.productId.img}`
+                  }
+                  alt={item.productId.name}
+                  className="w-20 h-20 object-contain"
+                />
+                <div>
+                  <h2 className="font-semibold text-lg">
+                    {item.productId.name}
+                  </h2>
+                  <p className="text-gray-500">
+                    ₹{item.productId.discountedPrice}
+                  </p>
+                </div>
+              </div>
+
+              {/* RIGHT */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() =>
+                    changeQty(item.productId._id, "dec")
+                  }
+                  className="px-3 py-1 bg-gray-200 rounded"
+                >
+                  −
+                </button>
+
+                <span>{item.quantity}</span>
+
+                <button
+                  onClick={() =>
+                    changeQty(item.productId._id, "inc")
+                  }
+                  className="px-3 py-1 bg-gray-200 rounded"
+                >
+                  +
+                </button>
+
+                <p className="font-bold">
+                  ₹{item.productId.discountedPrice * item.quantity}
                 </p>
+
+                <button
+                  onClick={() =>
+                    removeItem(item.productId._id)
+                  }
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg"
+                >
+                  Remove
+                </button>
               </div>
             </div>
-
-            {/* RIGHT */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() =>
-                  changeQty(item.productId._id, "dec")
-                }
-                className="px-3 py-1 bg-gray-200 rounded"
-              >
-                −
-              </button>
-
-              <span>{item.quantity}</span>
-
-              <button
-                onClick={() =>
-                  changeQty(item.productId._id, "inc")
-                }
-                className="px-3 py-1 bg-gray-200 rounded"
-              >
-                +
-              </button>
-
-              <p className="font-bold">
-                ₹
-                {item.productId.discountedPrice *
-                  item.quantity}
-              </p>
-
-              <button
-                onClick={() =>
-                  removeItem(item.productId._id)
-                }
-                className="bg-red-500 text-white px-4 py-2 rounded-lg"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        ))}
+          ))}
 
         {/* COUPON */}
         <div className="mt-6 p-4 border rounded-xl">
@@ -254,9 +251,7 @@ export default function Cart() {
             <input
               type="text"
               value={couponCode}
-              onChange={(e) =>
-                setCouponCode(e.target.value)
-              }
+              onChange={(e) => setCouponCode(e.target.value)}
               placeholder="Enter coupon code"
               className="border px-4 py-2 rounded-lg w-full"
             />
@@ -269,9 +264,7 @@ export default function Cart() {
           </div>
 
           {couponError && (
-            <p className="text-red-500 mt-2">
-              {couponError}
-            </p>
+            <p className="text-red-500 mt-2">{couponError}</p>
           )}
 
           {couponApplied && (
@@ -297,14 +290,7 @@ export default function Cart() {
       </div>
 
       {/* TOAST */}
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        theme="light"
-      />
+      <ToastContainer position="top-right" autoClose={2000} />
     </div>
   );
 }
