@@ -4,6 +4,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import axios from "axios";
+import {
+    getCookieOptions,
+    getRequiredEnv,
+    getSafeGithubRedirectUri,
+    resolveFrontendUrl,
+} from "../utils/authConfig.js";
 
 function buildSessionResponse(user, token) {
     const decoded = jwt.decode(token);
@@ -40,7 +46,14 @@ export async function getUsers(req, res) {
 
 export async function loginUsers(req, res) {
     try {
-        const data = req.body;
+        const data = req.body || {};
+
+        if (!data.email || !data.password) {
+            return res.status(400).json({
+                message: "Email and password are required",
+            });
+        }
+
         const user = await Auth.findOne({ email: data.email });
 
         if (!user) {
@@ -50,6 +63,12 @@ export async function loginUsers(req, res) {
         if (user.isBlocked) {
             return res.status(403).json({
                 message: "Your account has been blocked. Please contact the admin.",
+            });
+        }
+
+        if (!user.password) {
+            return res.status(400).json({
+                message: "This account uses social login. Continue with Google or GitHub.",
             });
         }
 
@@ -68,18 +87,13 @@ export async function loginUsers(req, res) {
 
         const authToken = jwt.sign(
             { id: user._id, role: user.role },
-            process.env.JWT_SECRET,
+            getRequiredEnv("JWT_SECRET"),
             { expiresIn: "3h" }
         );
 
-        const isProd = process.env.NODE_ENV === "production";
-
-        res.cookie("auth_token", authToken, {
-            httpOnly: true,
-            secure: isProd,
-            sameSite: isProd ? "none" : "lax",
+        res.cookie("auth_token", authToken, getCookieOptions(req, {
             maxAge: 3 * 60 * 60 * 1000,
-        });
+        }));
 
         return res.status(200).json({
             message: "Login successful",
@@ -92,13 +106,7 @@ export async function loginUsers(req, res) {
 
 export async function logoutUsers(req, res) {
     try {
-        const isProd = process.env.NODE_ENV === "production";
-
-        res.clearCookie("auth_token", {
-            httpOnly: true,
-            secure: isProd,
-            sameSite: isProd ? "none" : "lax",
-        });
+        res.clearCookie("auth_token", getCookieOptions(req));
 
         return res.status(200).json({
             message: "User Logout successful",
@@ -174,20 +182,29 @@ export async function deleteUsers(req, res) {
 
 export async function githubLogin(req, res) {
     try {
-        const { code } = req.body;
+        const { code, redirectUri } = req.body || {};
 
         if (!code) {
             return res.status(400).json({ message: "Code missing" });
         }
 
+        const githubRedirectUri = getSafeGithubRedirectUri(redirectUri);
+        const tokenPayload = new URLSearchParams({
+            client_id: getRequiredEnv("GITHUB_CLIENT_ID"),
+            client_secret: getRequiredEnv("GITHUB_CLIENT_SECRET"),
+            code,
+            redirect_uri: githubRedirectUri,
+        });
+
         const tokenRes = await axios.post(
             "https://github.com/login/oauth/access_token",
+            tokenPayload.toString(),
             {
-                client_id: process.env.GITHUB_CLIENT_ID,
-                client_secret: process.env.GITHUB_CLIENT_SECRET,
-                code,
-            },
-            { headers: { Accept: "application/json" } }
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            }
         );
 
         const accessToken = tokenRes.data.access_token;
@@ -196,15 +213,22 @@ export async function githubLogin(req, res) {
         }
 
         const userRes = await axios.get("https://api.github.com/user", {
-            headers: { Authorization: `Bearer ${accessToken}` },
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: "application/vnd.github+json",
+            },
         });
 
         const emailRes = await axios.get("https://api.github.com/user/emails", {
-            headers: { Authorization: `Bearer ${accessToken}` },
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: "application/vnd.github+json",
+            },
         });
 
         const primaryEmail =
-            emailRes.data.find((entry) => entry.primary)?.email ||
+            emailRes.data.find((entry) => entry.primary && entry.verified)?.email ||
+            emailRes.data.find((entry) => entry.verified)?.email ||
             `${userRes.data.id}@github.local`;
 
         let user = await Auth.findOne({ email: primaryEmail });
@@ -215,36 +239,61 @@ export async function githubLogin(req, res) {
             });
         }
 
+        if (user && user.role !== "user") {
+            return res.status(403).json({ message: "Access denied. User only." });
+        }
+
         if (!user) {
             user = await Auth.create({
-                name: userRes.data.name || "GitHub User",
+                name: userRes.data.name || userRes.data.login || "GitHub User",
                 email: primaryEmail,
-                avatar: userRes.data.avatar_url,
+                image: userRes.data.avatar_url,
+                githubId: String(userRes.data.id),
                 role: "user",
-                provider: "github",
+                authProvider: "github",
             });
+        } else {
+            let needsSave = false;
+
+            if (!user.githubId) {
+                user.githubId = String(userRes.data.id);
+                needsSave = true;
+            }
+
+            if (!user.image && userRes.data.avatar_url) {
+                user.image = userRes.data.avatar_url;
+                needsSave = true;
+            }
+
+            if (user.authProvider === "local" && !user.password) {
+                user.authProvider = "github";
+                needsSave = true;
+            }
+
+            if (needsSave) {
+                await user.save();
+            }
         }
 
         const token = jwt.sign(
             { id: user._id, role: user.role },
-            process.env.JWT_SECRET,
+            getRequiredEnv("JWT_SECRET"),
             { expiresIn: "7d" }
         );
 
-        res.cookie("auth_token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        res.cookie("auth_token", token, getCookieOptions(req, {
             maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        }));
 
         return res.status(200).json({
             message: "GitHub login successful",
             ...buildSessionResponse(user, token),
         });
     } catch (error) {
-        console.error("GitHub Login Error:", error.message);
-        return res.status(500).json({ message: "GitHub login failed" });
+        console.error("GitHub Login Error:", error.response?.data || error.message);
+        return res.status(500).json({
+            message: error.message || "GitHub login failed",
+        });
     }
 }
 
@@ -267,7 +316,7 @@ export async function verifyEmail(req, res) {
 
         await user.save();
 
-        res.redirect("http://localhost:5173/login");
+        res.redirect(resolveFrontendUrl("/login"));
     } catch (error) {
         console.error("Verify Email Error:", error);
         res.status(500).send("Server error");

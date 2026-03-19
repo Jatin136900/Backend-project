@@ -1,24 +1,15 @@
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import Auth from "../models/Auth.js";
+import { getCookieOptions } from "../utils/authConfig.js";
 
 const ROLE_COOKIE_MAP = {
   user: "auth_token",
   admin: "admin_token",
 };
 
-function getCookieOptions() {
-  const isProd = process.env.NODE_ENV === "production";
-
-  return {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
-  };
-}
-
-function clearCookie(res, cookieName) {
-  res.clearCookie(cookieName, getCookieOptions());
+function clearCookie(req, res, cookieName) {
+  res.clearCookie(cookieName, getCookieOptions(req));
 }
 
 function getCookieName(role) {
@@ -66,7 +57,7 @@ async function validateSession(req, res, role) {
     const { decoded, user } = await getVerifiedUser(token);
 
     if (!user) {
-      clearCookie(res, cookieName);
+      clearCookie(req, res, cookieName);
       return {
         ok: false,
         status: 401,
@@ -76,7 +67,7 @@ async function validateSession(req, res, role) {
     }
 
     if (decoded.role !== role || user.role !== role) {
-      clearCookie(res, cookieName);
+      clearCookie(req, res, cookieName);
       return {
         ok: false,
         status: 403,
@@ -86,7 +77,7 @@ async function validateSession(req, res, role) {
     }
 
     if (user.isBlocked) {
-      clearCookie(res, cookieName);
+      clearCookie(req, res, cookieName);
       return {
         ok: false,
         status: 403,
@@ -109,7 +100,7 @@ async function validateSession(req, res, role) {
       error.name === "TokenExpiredError" || error.name === "JsonWebTokenError";
 
     if (isJwtError) {
-      clearCookie(res, cookieName);
+      clearCookie(req, res, cookieName);
       return {
         ok: false,
         status: 401,

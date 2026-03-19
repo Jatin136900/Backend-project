@@ -1,4 +1,5 @@
 import axios from "axios";
+import { apiBaseUrl } from "./config/env";
 
 const authFailureHandlers = {
   user: null,
@@ -23,7 +24,7 @@ export function registerAuthFailureHandlers(handlers) {
 }
 
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_BASEURL || "http://localhost:3000",
+  baseURL: apiBaseUrl || undefined,
   withCredentials: true,
 });
 

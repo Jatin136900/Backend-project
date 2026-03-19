@@ -4,13 +4,12 @@ import { useNavigate, Link } from "react-router-dom";
 import instance, { withAuthRole } from "../axios.Config";
 import { useAuth } from "../contexts/AuthProvider";
 import { toast } from "react-toastify";
+import { resolveBackendUrl } from "../config/env";
 
 function ProductCard({ product }) {
   const navigate = useNavigate();
   const { updateCartCount } = useAuth();
   const [adding, setAdding] = useState(false);
-
-  const BASEURL = import.meta.env.VITE_BASEURL;
 
   function formatCategory(slug) {
     return slug
@@ -75,7 +74,7 @@ function ProductCard({ product }) {
             src={
               product.img?.startsWith("http")
                 ? product.img
-                : `${BASEURL}/${product.img}`
+                : resolveBackendUrl(product.img)
             }
             alt={product.name}
             className="max-h-44 object-contain transition-transform duration-300 hover:scale-105"

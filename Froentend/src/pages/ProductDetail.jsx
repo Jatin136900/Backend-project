@@ -4,6 +4,7 @@ import instance, { withAuthRole } from "../axios.Config";
 import { useAuth } from "../contexts/AuthProvider";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { resolveBackendUrl } from "../config/env";
 
 import AIChatBox from "../components/Chat.jsx";
 
@@ -20,8 +21,6 @@ const ProductDetail = () => {
   const [addedToCart, setAddedToCart] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [showChat, setShowChat] = useState(false);
-
-  const BASEURL = import.meta.env.VITE_BASEURL;
 
   useEffect(() => {
     fetchProduct();
@@ -152,7 +151,7 @@ const ProductDetail = () => {
               src={
                 product.img?.startsWith("http")
                   ? product.img
-                  : `${BASEURL}/${product.img}`
+                  : resolveBackendUrl(product.img)
               }
               alt={product.name}
               className="w-96 object-contain"

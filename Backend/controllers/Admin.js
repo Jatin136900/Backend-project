@@ -3,16 +3,7 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
-
-function getAdminCookieOptions() {
-  const isProd = process.env.NODE_ENV === "production";
-
-  return {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
-  };
-}
+import { getCookieOptions, getRequiredEnv } from "../utils/authConfig.js";
 
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
@@ -68,6 +59,12 @@ export async function loginAdmin(req, res) {
       return res.status(403).json({ message: "This account is blocked" });
     }
 
+    if (!admin.password) {
+      return res.status(400).json({
+        message: "This account does not support password login",
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid password" });
@@ -79,12 +76,12 @@ export async function loginAdmin(req, res) {
 
     const adminToken = jwt.sign(
       { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET,
+      getRequiredEnv("JWT_SECRET"),
       { expiresIn: "1d" }
     );
 
     res.cookie("admin_token", adminToken, {
-      ...getAdminCookieOptions(),
+      ...getCookieOptions(req),
       maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -102,7 +99,7 @@ export async function loginAdmin(req, res) {
 ====================== */
 export async function logoutAdmin(req, res) {
   try {
-    res.clearCookie("admin_token", getAdminCookieOptions());
+    res.clearCookie("admin_token", getCookieOptions(req));
 
     return res.status(200).json({ message: "Logout successful" });
   } catch (error) {

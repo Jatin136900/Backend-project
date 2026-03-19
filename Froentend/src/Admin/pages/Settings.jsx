@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
 import instance, { withAuthRole } from "../../axios.Config";
 import { Pencil, Trash2, ArrowUpRight, X } from "lucide-react";
+import { resolveBackendUrl } from "../../config/env";
 
 export default function Settings() {
   const [products, setProducts] = useState([]);
   const [editProduct, setEditProduct] = useState(null);
   const [formData, setFormData] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
-
-  const FRONTEND_URL = import.meta.env.VITE_BASEURL;
-  const BASEURL = import.meta.env.VITE_BASEURL
-
 
   useEffect(() => {
     fetchProducts();
@@ -38,7 +35,7 @@ export default function Settings() {
   function openEditModal(product) {
     setEditProduct(product);
     setFormData(product);
-    setImagePreview(`${FRONTEND_URL}/${product.img}`);
+    setImagePreview(resolveBackendUrl(product.img));
   }
 
   function closeModal() {
@@ -115,7 +112,7 @@ export default function Settings() {
               <img
                 src={p.img?.startsWith("http")
                   ? p.img
-                  : `${BASEURL}/${p.img}`}
+                  : resolveBackendUrl(p.img)}
                 className="w-full h-full object-cover"
               />
             </div>

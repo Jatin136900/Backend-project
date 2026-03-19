@@ -7,6 +7,11 @@ import { GoogleLogin } from "@react-oauth/google";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  githubCallbackUrl,
+  githubClientId,
+  googleClientId,
+} from "../config/env";
 
 function Login() {
   const navigate = useNavigate();
@@ -62,22 +67,37 @@ function Login() {
       toast.success("Google login successful");
       navigate(location.state?.redirectTo || "/");
     } catch (error) {
-      toast.error("Google login failed");
+      toast.error(error.response?.data?.message || "Google login failed");
     }
   }
 
-  function handleGithubLogin() {
-    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
-    const redirectUri = "http://localhost:5173/github-callback";
-    const redirectTo = location.state?.redirectTo || "/";
+  function createGithubState() {
+    if (window.crypto?.randomUUID) {
+      return window.crypto.randomUUID();
+    }
 
+    return Math.random().toString(36).slice(2);
+  }
+
+  function handleGithubLogin() {
+    if (!githubClientId) {
+      toast.error("GitHub login is not configured.");
+      return;
+    }
+
+    const redirectTo = location.state?.redirectTo || "/";
+    const oauthState = createGithubState();
+    const authUrl = new URL("https://github.com/login/oauth/authorize");
+
+    sessionStorage.setItem("github_oauth_state", oauthState);
     sessionStorage.setItem("post_login_redirect", redirectTo);
 
-    window.location.href =
-      `https://github.com/login/oauth/authorize` +
-      `?client_id=${clientId}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&scope=user:email read:user`;
+    authUrl.searchParams.set("client_id", githubClientId);
+    authUrl.searchParams.set("redirect_uri", githubCallbackUrl);
+    authUrl.searchParams.set("scope", "read:user user:email");
+    authUrl.searchParams.set("state", oauthState);
+
+    window.location.assign(authUrl.toString());
   }
 
   return (
@@ -136,7 +156,16 @@ function Login() {
               {loading ? "Please wait..." : "Login"}
             </button>
 
-            <GoogleLogin onSuccess={handleGoogleSuccess} />
+            {googleClientId ? (
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => toast.error("Google login failed")}
+              />
+            ) : (
+              <p className="text-center text-sm text-gray-500">
+                Google login is unavailable right now.
+              </p>
+            )}
 
             <button
               type="button"

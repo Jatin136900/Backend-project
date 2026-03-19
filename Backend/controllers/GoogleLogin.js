@@ -2,17 +2,10 @@ import { OAuth2Client } from "google-auth-library";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import Auth from "../models/Auth.js";
+import { getCookieOptions, getRequiredEnv } from "../utils/authConfig.js";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-function getUserCookieOptions() {
-  const isProd = process.env.NODE_ENV === "production";
-
-  return {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
-  };
+function getGoogleClient() {
+  return new OAuth2Client(getRequiredEnv("GOOGLE_CLIENT_ID"));
 }
 
 function buildSessionResponse(user, token) {
@@ -33,18 +26,26 @@ function buildSessionResponse(user, token) {
 
 export const googleLogin = async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token } = req.body || {};
 
     if (!token) {
       return res.status(400).json({ message: "Google token is required" });
     }
 
+    const googleClientId = getRequiredEnv("GOOGLE_CLIENT_ID");
+    const client = getGoogleClient();
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: googleClientId,
     });
 
-    const { email, name, picture, sub } = ticket.getPayload();
+    const payload = ticket.getPayload();
+
+    if (!payload?.email) {
+      return res.status(400).json({ message: "Unable to read Google account details" });
+    }
+
+    const { email, name, picture, sub } = payload;
 
     let user = await Auth.findOne({ email });
 
@@ -52,6 +53,10 @@ export const googleLogin = async (req, res) => {
       return res.status(403).json({
         message: "Your account has been blocked. Please contact the admin.",
       });
+    }
+
+    if (user && user.role !== "user") {
+      return res.status(403).json({ message: "Access denied. User only." });
     }
 
     if (!user) {
@@ -63,6 +68,27 @@ export const googleLogin = async (req, res) => {
         authProvider: "google",
         role: "user",
       });
+    } else {
+      let needsSave = false;
+
+      if (!user.googleId) {
+        user.googleId = sub;
+        needsSave = true;
+      }
+
+      if (!user.image && picture) {
+        user.image = picture;
+        needsSave = true;
+      }
+
+      if (user.authProvider === "local" && !user.password) {
+        user.authProvider = "google";
+        needsSave = true;
+      }
+
+      if (needsSave) {
+        await user.save();
+      }
     }
 
     if (!user.role) {
@@ -75,14 +101,17 @@ export const googleLogin = async (req, res) => {
         id: user._id,
         role: user.role,
       },
-      process.env.JWT_SECRET,
+      getRequiredEnv("JWT_SECRET"),
       { expiresIn: "1d" }
     );
 
-    res.cookie("auth_token", authToken, {
-      ...getUserCookieOptions(),
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+    res.cookie(
+      "auth_token",
+      authToken,
+      getCookieOptions(req, {
+        maxAge: 24 * 60 * 60 * 1000,
+      })
+    );
 
     return res.status(200).json({
       message: "Login success",

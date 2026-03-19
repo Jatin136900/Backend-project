@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import instance, { withAuthRole } from "../axios.Config";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
+import { resolveBackendUrl } from "../config/env";
 
 // 🔹 Toastify
 import { toast, ToastContainer } from "react-toastify";
@@ -20,7 +21,6 @@ export default function Cart() {
 
   const { updateCartCount, fetchCart } = useAuth();
   const navigate = useNavigate();
-  const BASEURL = import.meta.env.VITE_BASEURL;
 
   const getTotalQty = (cartData) =>
     cartData?.products?.reduce((sum, item) => sum + (item?.quantity || 0), 0) ||
@@ -201,7 +201,7 @@ export default function Cart() {
                   src={
                     item.productId.img?.startsWith("http")
                       ? item.productId.img
-                      : `${BASEURL}/${item.productId.img}`
+                      : resolveBackendUrl(item.productId.img)
                   }
                   alt={item.productId.name}
                   className="w-20 h-20 object-contain"
