@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthProvider";
 import FullScreenLoader from "../components/FullScreenLoader";
 import instance from "../axios.Config";
+import { useAuth } from "../contexts/AuthProvider";
 import { GoogleLogin } from "@react-oauth/google";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
@@ -11,8 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const { checkIsLoggedIn } = useAuth();
+  const { setAuthenticatedSession } = useAuth();
 
   const [data, setData] = useState({
     email: "",
@@ -33,45 +32,35 @@ function Login() {
     setErrorMsg("");
 
     try {
-      // ✅ NORMAL LOGIN
-      await instance.post("/api/auth/login", data);
+      const response = await instance.post("/api/auth/login", data);
+      setAuthenticatedSession("user", response.data);
 
-      toast.success("User login successfully");
+      toast.success(
+        response.data?.message || "Login successful"
+      );
 
-      // 🔥 ADD: SEND LOGIN OTP
-      await instance.post("/api/auth/send-login-otp", {
-        email: data.email,
-      });
-
-      checkIsLoggedIn();
-
-      // 🔥 ADD: REDIRECT TO OTP PAGE
-      navigate("/verify-otp", {
-        state: { email: data.email },
-      });
-
+      navigate(location.state?.redirectTo || "/");
     } catch (error) {
-      setLoading(false);
-
-      toast.error(
+      const message =
         error.response?.data?.message ||
-        "Wrong details, please check your information"
-      );
+        "Wrong details, please check your information";
 
-      setErrorMsg(
-        error.response?.data?.message || "Login failed"
-      );
+      toast.error(message);
+      setErrorMsg(message);
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleGoogleSuccess(credentialResponse) {
     try {
-      await instance.post("/api/auth/googleLogin", {
+      const response = await instance.post("/api/auth/googleLogin", {
         token: credentialResponse.credential,
       });
 
+      setAuthenticatedSession("user", response.data);
       toast.success("Google login successful");
-      navigate("/");
+      navigate(location.state?.redirectTo || "/");
     } catch (error) {
       toast.error("Google login failed");
     }
@@ -80,6 +69,9 @@ function Login() {
   function handleGithubLogin() {
     const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
     const redirectUri = "http://localhost:5173/github-callback";
+    const redirectTo = location.state?.redirectTo || "/";
+
+    sessionStorage.setItem("post_login_redirect", redirectTo);
 
     window.location.href =
       `https://github.com/login/oauth/authorize` +
@@ -95,7 +87,6 @@ function Login() {
 
       <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-50 to-blue-100 px-4">
         <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-
           <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
             User Login
           </h2>
@@ -107,7 +98,6 @@ function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-
             <input
               type="email"
               name="email"
@@ -157,12 +147,11 @@ function Login() {
             </button>
 
             <p className="text-center text-sm">
-              Don’t have an account?{" "}
+              Don't have an account?{" "}
               <NavLink to="/register" className="text-blue-600">
                 Register
               </NavLink>
             </p>
-
           </form>
         </div>
       </div>

@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import instance from '..//../axios.Config';
+import { useAuth } from "../../contexts/AuthProvider";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   async function handleLogout() {
     try {
-      await instance.post("/admin/logout"); // 👈 API call
-      navigate("/admin/login");             // 👈 redirect
+      await logout("admin");
+      navigate("/admin/login");
     } catch (error) {
       console.error(error);
       console.error("Logout failed", error);

@@ -1,8 +1,10 @@
 import { Router } from "express";
 import {
-    loginAdmin,
-    logoutAdmin,
-    toggleBlockUser,
+  deleteUser,
+  getAdminUsers,
+  loginAdmin,
+  logoutAdmin,
+  toggleBlockUser,
 } from "../controllers/Admin.js";
 import { checkAdmin } from "../middlewares/middleAuth.js";
 
@@ -10,10 +12,15 @@ const router = Router();
 
 router.post("/login", loginAdmin);
 router.post("/logout", logoutAdmin);
+router.get("/check", checkAdmin, (req, res) => {
+  res.status(200).json({ message: "Admin verified" });
+});
 
-/* 🔥 BLOCK / UNBLOCK USER */
-router.patch("/user/block/:id", toggleBlockUser);
+router.get("/users", checkAdmin, getAdminUsers);
+router.delete("/users/:id", checkAdmin, deleteUser);
+router.patch("/users/:id/block", checkAdmin, toggleBlockUser);
 
-router.get("/check", checkAdmin);
+// Legacy route kept for compatibility with existing clients.
+router.patch("/user/block/:id", checkAdmin, toggleBlockUser);
 
 export default router;

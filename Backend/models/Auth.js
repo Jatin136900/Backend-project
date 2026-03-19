@@ -35,7 +35,7 @@ const authSchema = new Schema(
         role: {
             type: String,
             enum: ["admin", "user"],
-            default: "user", // ✅ THIS WAS MISSING
+            default: "user",
         },
 
         authProvider: {
@@ -49,21 +49,11 @@ const authSchema = new Schema(
             unique: true,
             sparse: true,
         },
+
         isBlocked: {
             type: Boolean,
             default: false,
         },
-
-        // 🔥 ADD FOR LOGIN OTP
-        loginOtp: {
-            type: String,
-        },
-
-        loginOtpExpiry: {
-            type: Date,
-        },
-
-
     },
     { timestamps: true }
 );

@@ -1,4 +1,8 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from "react-router-dom";
 
 import First from "./pages/First";
 import Home from "./pages/Home";
@@ -8,54 +12,72 @@ import Product from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import GithubCallback from "./pages/GithubCallback";
+import Unauthorized from "./pages/Unauthorized";
 
 import AuthProvider from "./contexts/AuthProvider";
 
-// ADMIN
 import AdminLogin from "./Admin/pages/AdminLogin";
 import Dashboard from "./Admin/pages/Dashboard";
 import Users from "./Admin/pages/Users";
 import Settings from "./Admin/pages/Settings";
 import Coupon from "./Admin/pages/Coupon";
 import AdminLayout from "./Admin/AdminLayout";
-import VerifyOtp from "./pages/VerifyOtp";
 import AddCategory from "./Admin/pages/AddCategory";
 import CategoryProducts from "./pages/CategoryProducts";
+import ProtectedRoute from "./components/routes/ProtectedRoute";
+import GuestRoute from "./components/routes/GuestRoute";
 
 const router = createBrowserRouter([
-
-  /* ================= USER LAYOUT ================= */
   {
     path: "/",
-    element: <First />,     // ✅ USER HEADER + FOOTER
+    element: <First />,
     children: [
-      { index: true, element: <Home /> },
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
-      { path: "product", element: <Product /> },
-      { path: "product/:slug", element: <ProductDetail /> },
-      { path: "cart", element: <Cart /> },
-      { path: "github-callback", element: <GithubCallback /> },
-      { path: "/verify-otp", element: <VerifyOtp /> },
-      { path: "category/:slug",element:<CategoryProducts/>}
-    ]
+      {
+        element: <GuestRoute role="user" />,
+        children: [
+          { path: "login", element: <Login /> },
+          { path: "register", element: <Register /> },
+          { path: "github-callback", element: <GithubCallback /> },
+        ],
+      },
+      {
+        element: <ProtectedRoute role="user" />,
+        children: [
+          { index: true, element: <Home /> },
+          { path: "product", element: <Product /> },
+          { path: "product/:slug", element: <ProductDetail /> },
+          { path: "cart", element: <Cart /> },
+          { path: "category/:slug", element: <CategoryProducts /> },
+        ],
+      },
+    ],
   },
-
-  /* ================= ADMIN (NO HEADER / FOOTER) ================= */
-  { path: "/admin/login", element: <AdminLogin /> },
-
+  {
+    path: "/unauthorized",
+    element: <Unauthorized />,
+  },
+  {
+    path: "/admin/login",
+    element: <GuestRoute role="admin" />,
+    children: [{ index: true, element: <AdminLogin /> }],
+  },
   {
     path: "/admin",
-    element: <AdminLayout />,   // ❌ NO USER HEADER / FOOTER
+    element: <ProtectedRoute role="admin" />,
     children: [
-      { path: "dashboard", element: <Dashboard /> },
-      { path: "users", element: <Users /> },
-      { path: "settings", element: <Settings /> },
-      { path: "coupon", element: <Coupon /> },
-      { path: "category", element: <AddCategory /> }
-    ]
-  }
-
+      {
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <Navigate to="dashboard" replace /> },
+          { path: "dashboard", element: <Dashboard /> },
+          { path: "users", element: <Users /> },
+          { path: "settings", element: <Settings /> },
+          { path: "coupon", element: <Coupon /> },
+          { path: "category", element: <AddCategory /> },
+        ],
+      },
+    ],
+  },
 ]);
 
 function App() {

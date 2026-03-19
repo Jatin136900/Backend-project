@@ -1,8 +1,50 @@
 import Auth from "../models/Auth.js";
-import mangoose from "mongoose";
+import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
+
+function getAdminCookieOptions() {
+  const isProd = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+  };
+}
+
+function isValidObjectId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
+
+function buildSessionResponse(user, token) {
+  const decoded = jwt.decode(token);
+
+  return {
+    user: {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+    expiresAt: decoded?.exp
+      ? new Date(decoded.exp * 1000).toISOString()
+      : null,
+  };
+}
+
+export async function getAdminUsers(req, res) {
+  try {
+    const users = await Auth.find()
+      .select("-password")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ users });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
 
 /* ======================
    ADMIN LOGIN
@@ -11,9 +53,19 @@ export async function loginAdmin(req, res) {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
+    }
+
     const admin = await Auth.findOne({ email });
     if (!admin) {
       return res.status(404).json({ message: "Email not found" });
+    }
+
+    if (admin.isBlocked) {
+      return res.status(403).json({ message: "This account is blocked" });
     }
 
     const isMatch = await bcrypt.compare(password, admin.password);
@@ -25,22 +77,21 @@ export async function loginAdmin(req, res) {
       return res.status(403).json({ message: "Access denied. Admin only." });
     }
 
-    const admin_token = jwt.sign(
+    const adminToken = jwt.sign(
       { id: admin._id, role: admin.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    const isProd = process.env.NODE_ENV === "production";
-
-    res.cookie("admin_token", admin_token, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? "none" : "lax",
+    res.cookie("admin_token", adminToken, {
+      ...getAdminCookieOptions(),
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    return res.status(200).json({ message: "Admin login successful" });
+    return res.status(200).json({
+      message: "Admin login successful",
+      ...buildSessionResponse(admin, adminToken),
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -51,13 +102,42 @@ export async function loginAdmin(req, res) {
 ====================== */
 export async function logoutAdmin(req, res) {
   try {
-    res.clearCookie("admin_token", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
+    res.clearCookie("admin_token", getAdminCookieOptions());
 
     return res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function deleteUser(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "User id is required" });
+    }
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid user id" });
+    }
+
+    const user = await Auth.findById(id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Admin users cannot be deleted" });
+    }
+
+    await Auth.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      message: "User deleted successfully",
+      deletedUserId: id,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -70,13 +150,19 @@ export async function toggleBlockUser(req, res) {
   try {
     const { id } = req.params;
 
-    const user = await Auth.findById(id);
-    console.log(user);
+    if (!id) {
+      return res.status(400).json({ message: "User id is required" });
+    }
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid user id" });
+    }
+
+    const user = await Auth.findById(id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 🚫 Admin ko block mat karna
     if (user.role === "admin") {
       return res.status(403).json({ message: "Cannot block admin" });
     }

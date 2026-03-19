@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import instance from "../../axios.Config";
+import instance, { withAuthRole } from "../../axios.Config";
 
 const AddCoupon = () => {
   const [form, setForm] = useState({
@@ -33,7 +33,7 @@ const AddCoupon = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await instance.post("/coupon/add", form);
+      await instance.post("/coupon/add", form, withAuthRole("admin"));
       setMessage("Coupon added successfully");
       setForm({ code: "", discount: "", startDate: "", expiryDate: "" });
       fetchCoupons();
@@ -46,7 +46,7 @@ const AddCoupon = () => {
      FETCH COUPONS
   ====================== */
   const fetchCoupons = async () => {
-    const res = await instance.get("/coupon");
+    const res = await instance.get("/coupon", withAuthRole("admin"));
     setCoupons(res.data);
   };
 
@@ -54,7 +54,7 @@ const AddCoupon = () => {
      DELETE COUPON
   ====================== */
   const deleteCoupon = async (id) => {
-    await instance.delete(`/coupon/${id}`);
+    await instance.delete(`/coupon/${id}`, withAuthRole("admin"));
     fetchCoupons();
   };
 

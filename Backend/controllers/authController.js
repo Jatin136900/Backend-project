@@ -1,27 +1,40 @@
-import Auth from '../models/Auth.js';
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import Auth from "../models/Auth.js";
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import "dotenv/config";
 import axios from "axios";
-import { createHash } from "crypto";
-import { sendOTPEmail } from '../utils/SendEmail.js';
 
+function buildSessionResponse(user, token) {
+    const decoded = jwt.decode(token);
+
+    return {
+        user: {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+        },
+        expiresAt: decoded?.exp
+            ? new Date(decoded.exp * 1000).toISOString()
+            : null,
+    };
+}
 
 export async function getUsers(req, res) {
-
     try {
         const users = await Auth.find();
+
         if (!users || users.length === 0) {
             return res.status(404).json({ message: "No users found" });
         }
 
-        else {
-            return res.status(200).json(users);
-        }
-
+        return res.status(200).json(users);
     } catch (error) {
-        return res.status(500).json({ message: "Internal server error", error: error.message });
+        return res.status(500).json({
+            message: "Internal server error",
+            error: error.message,
+        });
     }
 }
 
@@ -34,36 +47,44 @@ export async function loginUsers(req, res) {
             return res.status(404).json({ message: "Email not Found" });
         }
 
-        const doesPasswordMatch = await bcrypt.compare(data.password, user.password);
+        if (user.isBlocked) {
+            return res.status(403).json({
+                message: "Your account has been blocked. Please contact the admin.",
+            });
+        }
+
+        const doesPasswordMatch = await bcrypt.compare(
+            data.password,
+            user.password
+        );
 
         if (!doesPasswordMatch) {
             return res.status(400).json({ message: "Invalid password" });
         }
 
-        // 🚫 BLOCK ADMIN → Only allow normal user
-        if (user.role !== 'user') {
+        if (user.role !== "user") {
             return res.status(403).json({ message: "Access denied. User only." });
         }
 
-        const auth_token = jwt.sign(
+        const authToken = jwt.sign(
             { id: user._id, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: "3h" }
         );
 
-
         const isProd = process.env.NODE_ENV === "production";
 
-        res.cookie("auth_token", auth_token, {
+        res.cookie("auth_token", authToken, {
             httpOnly: true,
-            secure: isProd,              // localhost → false
+            secure: isProd,
             sameSite: isProd ? "none" : "lax",
             maxAge: 3 * 60 * 60 * 1000,
         });
 
-
-        return res.status(200).json({ message: "Login Successful" });
-
+        return res.status(200).json({
+            message: "Login successful",
+            ...buildSessionResponse(user, authToken),
+        });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
@@ -80,68 +101,49 @@ export async function logoutUsers(req, res) {
         });
 
         return res.status(200).json({
-            message: "User Logout successful"
+            message: "User Logout successful",
         });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
 }
 
-
 export async function registerUser(req, res) {
     try {
         const data = req.body;
 
-        // check for email
         const emailExists = await Auth.findOne({ email: data.email });
         if (emailExists) {
             return res.status(400).json({ message: "Email already exists" });
         }
 
-        // check for username
         const usernameExists = await Auth.findOne({ username: data.username });
         if (usernameExists) {
             return res.status(400).json({ message: "Username already exists" });
         }
 
-        // check for phone
         const phoneExists = await Auth.findOne({ phone: data.phone });
         if (phoneExists) {
             return res.status(400).json({ message: "Phone number already exists" });
         }
 
-        // assign default role
-        data.role = "user";   // 🔥 MOST IMPORTANT LINE
+        data.role = "user";
+        data.password = await bcrypt.hash(data.password, 10);
 
-        
-        // hash password
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-        data.password = hashedPassword;
-        
         const newUser = new Auth(data);
         await newUser.save();
 
-        
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const hashedOtp = createHash("sha256").update(otp).digest("hex");
-        data.otp = hashedOtp;
-        data.otpExpiry = Date.now() + 10 * 60 * 1000;
-
-        await sendOTPEmail(data.email, data.name, otp);
-
         return res.status(201).json({
-            message: "User registered successfully. Verification email sent.",
-            user: newUser
+            message: "User registered successfully.",
+            user: newUser,
         });
-
     } catch (error) {
         return res.status(500).json({
             message: "Internal server error",
-            error: error.message
+            error: error.message,
         });
     }
 }
-
 
 export async function deleteUsers(req, res) {
     try {
@@ -165,7 +167,7 @@ export async function deleteUsers(req, res) {
     } catch (error) {
         return res.status(500).json({
             message: "Internal server error",
-            error: error.message
+            error: error.message,
         });
     }
 }
@@ -178,7 +180,6 @@ export async function githubLogin(req, res) {
             return res.status(400).json({ message: "Code missing" });
         }
 
-        // 1️⃣ code → access token
         const tokenRes = await axios.post(
             "https://github.com/login/oauth/access_token",
             {
@@ -194,25 +195,25 @@ export async function githubLogin(req, res) {
             return res.status(400).json({ message: "No access token" });
         }
 
-        // 2️⃣ GitHub user
         const userRes = await axios.get("https://api.github.com/user", {
             headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        // 3️⃣ Email fetch (IMPORTANT)
-        const emailRes = await axios.get(
-            "https://api.github.com/user/emails",
-            {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            }
-        );
+        const emailRes = await axios.get("https://api.github.com/user/emails", {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
 
         const primaryEmail =
-            emailRes.data.find(e => e.primary)?.email ||
+            emailRes.data.find((entry) => entry.primary)?.email ||
             `${userRes.data.id}@github.local`;
 
-        // 4️⃣ Find or create user
         let user = await Auth.findOne({ email: primaryEmail });
+
+        if (user?.isBlocked) {
+            return res.status(403).json({
+                message: "Your account has been blocked. Please contact the admin.",
+            });
+        }
 
         if (!user) {
             user = await Auth.create({
@@ -224,7 +225,6 @@ export async function githubLogin(req, res) {
             });
         }
 
-        // 5️⃣ JWT
         const token = jwt.sign(
             { id: user._id, role: user.role },
             process.env.JWT_SECRET,
@@ -233,12 +233,15 @@ export async function githubLogin(req, res) {
 
         res.cookie("auth_token", token, {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        return res.status(200).json({ message: "GitHub login successful" });
-
+        return res.status(200).json({
+            message: "GitHub login successful",
+            ...buildSessionResponse(user, token),
+        });
     } catch (error) {
         console.error("GitHub Login Error:", error.message);
         return res.status(500).json({ message: "GitHub login failed" });
@@ -251,7 +254,7 @@ export async function verifyEmail(req, res) {
 
         const user = await Auth.findOne({
             emailVerifyToken: token,
-            emailVerifyExpiry: { $gt: Date.now() }
+            emailVerifyExpiry: { $gt: Date.now() },
         });
 
         if (!user) {
@@ -264,74 +267,11 @@ export async function verifyEmail(req, res) {
 
         await user.save();
 
-        // Redirect to login page
         res.redirect("http://localhost:5173/login");
-
     } catch (error) {
         console.error("Verify Email Error:", error);
         res.status(500).send("Server error");
     }
 }
 
-export async function sendLoginOTP(req, res) {
-  try {
-    const { email } = req.body;
-
-    const user = await Auth.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    user.loginOtp = createHash("sha256").update(otp).digest("hex");
-    user.loginOtpExpiry = Date.now() + 10 * 60 * 1000;
-
-    await user.save();
-
-    await sendOTPEmail(user.email, user.name, otp);
-
-    return res.status(200).json({ message: "Login OTP sent" });
-
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-}
-
-export async function verifyLoginOTP(req, res) {
-  try {
-    const { email, otp } = req.body;
-
-    const hashedOtp = createHash("sha256").update(otp).digest("hex");
-
-    const user = await Auth.findOne({
-      email,
-      loginOtp: hashedOtp,
-      loginOtpExpiry: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
-
-    user.loginOtp = undefined;
-    user.loginOtpExpiry = undefined;
-
-    await user.save();
-
-    return res.status(200).json({ message: "OTP verified" });
-
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-}
-
-
-
-
-export async function updateUsers(req, res) { }
-
-
-
-
-
+export async function updateUsers(req, res) {}

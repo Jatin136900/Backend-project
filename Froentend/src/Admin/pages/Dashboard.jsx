@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import instance from "../../axios.Config";
+import instance, { withAuthRole } from "../../axios.Config";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -97,7 +97,7 @@ function AddProduct() {
     try {
       await instance.post("product", product, {
         headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
+        ...withAuthRole("admin"),
       });
 
       // ✅ SUCCESS TOAST

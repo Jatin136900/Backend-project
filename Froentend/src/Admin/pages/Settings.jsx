@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import instance from "../../axios.Config";
+import instance, { withAuthRole } from "../../axios.Config";
 import { Pencil, Trash2, ArrowUpRight, X } from "lucide-react";
 
 export default function Settings() {
@@ -28,9 +28,7 @@ export default function Settings() {
   async function handleDelete(id) {
     if (!confirm("Delete this product permanently?")) return;
 
-    await instance.delete(`/product/${id}`, {
-      withCredentials: true, // 🔥 REQUIRED
-    });
+    await instance.delete(`/product/${id}`, withAuthRole("admin"));
 
     fetchProducts();
   }
@@ -80,9 +78,7 @@ export default function Settings() {
       await instance.put(
         `/product/${editProduct._id}`,
         data,
-        {
-          withCredentials: true, // 🔥 MOST IMPORTANT FIX
-        }
+        withAuthRole("admin")
       );
 
       console.log("Product updated successfully ✅");

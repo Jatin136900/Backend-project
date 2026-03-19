@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import instance from "../../axios.Config";
+import { useAuth } from "../../contexts/AuthProvider";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { setAuthenticatedSession } = useAuth();
 
   const [data, setData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -25,8 +28,8 @@ export default function AdminLogin() {
         { withCredentials: true }
       );
 
-      console.log("Admin Login Successful!");
-      navigate("/admin/dashboard");
+      setAuthenticatedSession("admin", res.data);
+      navigate(location.state?.redirectTo || "/admin/dashboard");
     } catch (err) {
       setErrorMsg(err.response?.data?.message || "Login failed");
     }

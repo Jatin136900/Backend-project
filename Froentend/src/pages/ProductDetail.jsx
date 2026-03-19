@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import instance from "../axios.Config";
+import instance, { withAuthRole } from "../axios.Config";
 import { useAuth } from "../contexts/AuthProvider";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -48,12 +48,16 @@ const ProductDetail = () => {
 
   async function fetchRelatedProducts(prod) {
     try {
-      const res = await instance.post("/api/ai/related-products", {
-        name: prod.name,
-        category: prod.category,
-        description: prod.description,
-        productId: prod._id,
-      });
+      const res = await instance.post(
+        "/api/ai/related-products",
+        {
+          name: prod.name,
+          category: prod.category,
+          description: prod.description,
+          productId: prod._id,
+        },
+        withAuthRole("user")
+      );
 
       setRelatedProducts(res.data || []);
     } catch (err) {
@@ -64,7 +68,7 @@ const ProductDetail = () => {
   /* ===== FIXED PART ===== */
   async function handleAddToCart() {
     try {
-      const cartRes = await instance.get("/cart");
+      const cartRes = await instance.get("/cart", withAuthRole("user"));
 
       const alreadyAdded = cartRes.data.products.find(
         (item) => item?.productId?._id === product._id
@@ -76,21 +80,33 @@ const ProductDetail = () => {
         return;
       }
 
-      await instance.post("/cart/add", {
-        productId: product._id,
-        qty,
-      });
+      const res = await instance.post(
+        "/cart/add",
+        {
+          productId: product._id,
+          qty,
+        },
+        withAuthRole("user")
+      );
 
-      updateCartCount("add", qty);
+      const totalQty =
+        res.data?.products?.reduce((sum, p) => sum + p.quantity, 0) || qty;
+      updateCartCount("set", totalQty);
       toast.success("Added to cart 🛒");
       navigate("/cart");
     } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        (err.response?.status === 401
+          ? "Please login to add items to cart"
+          : "Unable to add to cart");
+
       if (err.response?.status === 401) {
         navigate("/login", {
-          state: { redirectTo: "/Product/" + slug },
+          state: { redirectTo: "/product/" + slug },
         });
       } else {
-        toast.error("Something went wrong");
+        toast.error(msg);
         console.log(err);
       }
     }

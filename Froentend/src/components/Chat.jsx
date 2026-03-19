@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
-import instance from "../axios.Config";
+import instance, { withAuthRole } from "../axios.Config";
 
 const AIChatBox = ({ productName, onClose }) => {
   const [messages, setMessages] = useState([
@@ -18,7 +18,11 @@ const AIChatBox = ({ productName, onClose }) => {
 
     try {
       setLoading(true);
-      const res = await instance.post("/chat", { message: userMsg });
+      const res = await instance.post(
+        "/chat",
+        { message: userMsg },
+        withAuthRole("user")
+      );
       setMessages((prev) => [
         ...prev,
         { sender: "bot", text: res.data.reply },

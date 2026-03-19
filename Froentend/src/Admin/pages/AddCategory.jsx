@@ -70,7 +70,7 @@
 
 
 import { useEffect, useState } from "react";
-import instance from "../../axios.Config";
+import instance, { withAuthRole } from "../../axios.Config";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -115,9 +115,7 @@ function AddCategory() {
 
     try {
       setLoading(true);
-      await instance.post("/category", data, {
-        withCredentials: true,
-      });
+      await instance.post("/category", data, withAuthRole("admin"));
 
       toast.success("Category added successfully");
       setData({ name: "", slug: "" });
@@ -141,9 +139,7 @@ function AddCategory() {
     if (!confirm) return;
 
     try {
-      await instance.delete(`/category/${id}`, {
-        withCredentials: true,
-      });
+      await instance.delete(`/category/${id}`, withAuthRole("admin"));
 
       toast.success("Category deleted successfully");
       fetchCategories();

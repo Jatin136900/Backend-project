@@ -1,7 +1,7 @@
 import { PiCurrencyInrLight } from "react-icons/pi";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import instance from "../axios.Config";
+import instance, { withAuthRole } from "../axios.Config";
 import { useAuth } from "../contexts/AuthProvider";
 import { toast } from "react-toastify";
 
@@ -24,9 +24,9 @@ function ProductCard({ product }) {
     try {
       setAdding(true);
 
-      const cartRes = await instance.get("/cart");
+      const cartRes = await instance.get("/cart", withAuthRole("user"));
       const alreadyAdded = cartRes.data.products.find(
-        (item) => item.productId._id === product._id
+        (item) => item?.productId?._id === product._id
       );
 
       if (alreadyAdded) {
@@ -34,19 +34,31 @@ function ProductCard({ product }) {
         return;
       }
 
-      await instance.post("/cart/add", {
-        productId: product._id,
-        qty: 1,
-      });
+      const res = await instance.post(
+        "/cart/add",
+        {
+          productId: product._id,
+          qty: 1,
+        },
+        withAuthRole("user")
+      );
 
-      updateCartCount("add", 1);
+      const totalQty =
+        res.data?.products?.reduce((sum, p) => sum + p.quantity, 0) || 0;
+      updateCartCount("set", totalQty || 1);
       toast.success("Added to cart");
     } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        (err.response?.status === 401
+          ? "Please login to add items to cart"
+          : "Unable to add to cart");
+
       if (err.response?.status === 401) {
-        toast.warning("Please login to add items to cart");
+        toast.warning(msg);
         navigate("/login", { state: { redirectTo: "/" } });
       } else {
-        toast.error("Something went wrong");
+        toast.error(msg);
       }
     } finally {
       setAdding(false);

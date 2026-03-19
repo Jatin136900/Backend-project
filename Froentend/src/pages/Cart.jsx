@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import instance from "../axios.Config";
+import instance, { withAuthRole } from "../axios.Config";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthProvider";
 
@@ -22,6 +22,10 @@ export default function Cart() {
   const navigate = useNavigate();
   const BASEURL = import.meta.env.VITE_BASEURL;
 
+  const getTotalQty = (cartData) =>
+    cartData?.products?.reduce((sum, item) => sum + (item?.quantity || 0), 0) ||
+    0;
+
   useEffect(() => {
     loadCart();
   }, []);
@@ -33,6 +37,7 @@ export default function Cart() {
     try {
       const data = await fetchCart();
       setCart(data);
+      updateCartCount("set", getTotalQty(data));
     } catch (err) {
       if (err.response?.status === 401) {
         toast.warning("Please login to view cart");
@@ -48,24 +53,22 @@ export default function Cart() {
   ====================== */
   async function changeQty(productId, type) {
     try {
-      const res = await instance.patch("/cart/qty", { productId, type });
+      const res = await instance.patch(
+        "/cart/qty",
+        { productId, type },
+        withAuthRole("user")
+      );
       setCart(res.data);
+       // sync header count with server response
+      updateCartCount("set", getTotalQty(res.data));
 
       setCouponApplied(false);
       setDiscount(0);
       setFinalPrice(0);
-
-      if (type === "inc") {
-        updateCartCount("add", 1);
-        toast.success("Quantity increased");
-      }
-
-      if (type === "dec") {
-        updateCartCount("remove", 1);
-        toast.info("Quantity decreased");
-      }
+      toast.success(type === "inc" ? "Quantity increased" : "Quantity updated");
     } catch (err) {
-      toast.error("Unable to update quantity");
+      const msg = err.response?.data?.message || "Unable to update quantity";
+      toast.error(msg);
     }
   }
 
@@ -80,17 +83,21 @@ export default function Cart() {
 
       if (!item) return;
 
-      const res = await instance.delete(`/cart/${productId}`);
+      const res = await instance.delete(
+        `/cart/${productId}`,
+        withAuthRole("user")
+      );
       setCart(res.data);
 
       setCouponApplied(false);
       setDiscount(0);
       setFinalPrice(0);
 
-      updateCartCount("remove", item.quantity);
+      updateCartCount("set", getTotalQty(res.data));
       toast.success("Item removed from cart");
     } catch (err) {
-      toast.error("Unable to remove item");
+      const msg = err.response?.data?.message || "Unable to remove item";
+      toast.error(msg);
     }
   }
 
@@ -110,10 +117,14 @@ export default function Cart() {
     try {
       setCouponError("");
 
-      const res = await instance.post("/coupon/apply", {
-        code: couponCode,
-        cartTotal: total,
-      });
+      const res = await instance.post(
+        "/coupon/apply",
+        {
+          code: couponCode,
+          cartTotal: total,
+        },
+        withAuthRole("user")
+      );
 
       setDiscount(res.data.discountAmount);
       setFinalPrice(res.data.finalPrice);
