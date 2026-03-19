@@ -13,6 +13,21 @@ import {
   googleClientId,
 } from "../config/env";
 
+function getRequestErrorMessage(error, fallbackMessage) {
+  const responseData = error.response?.data;
+  const contentType = error.response?.headers?.["content-type"] || "";
+
+  if (typeof responseData === "string" && contentType.includes("text/html")) {
+    return "Render API configuration is failing. Please check deployed backend CORS/env settings.";
+  }
+
+  if (!error.response) {
+    return "Unable to reach the server. Please check the deployed API URL and CORS settings.";
+  }
+
+  return responseData?.message || fallbackMessage;
+}
+
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,9 +61,10 @@ function Login() {
 
       navigate(location.state?.redirectTo || "/");
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        "Wrong details, please check your information";
+      const message = getRequestErrorMessage(
+        error,
+        "Wrong details, please check your information"
+      );
 
       toast.error(message);
       setErrorMsg(message);
@@ -67,7 +83,7 @@ function Login() {
       toast.success("Google login successful");
       navigate(location.state?.redirectTo || "/");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Google login failed");
+      toast.error(getRequestErrorMessage(error, "Google login failed"));
     }
   }
 

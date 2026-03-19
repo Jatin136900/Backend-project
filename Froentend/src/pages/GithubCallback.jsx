@@ -3,6 +3,22 @@ import { useNavigate } from "react-router-dom";
 import instance from "../axios.Config";
 import { useAuth } from "../contexts/AuthProvider";
 import { githubCallbackUrl } from "../config/env";
+import { toast } from "react-toastify";
+
+function getGithubErrorMessage(error) {
+  const responseData = error.response?.data;
+  const contentType = error.response?.headers?.["content-type"] || "";
+
+  if (typeof responseData === "string" && contentType.includes("text/html")) {
+    return "Render API configuration is failing. Please check deployed backend CORS/env settings.";
+  }
+
+  if (!error.response) {
+    return "Unable to reach the server. Please check the deployed API URL and CORS settings.";
+  }
+
+  return responseData?.message || "GitHub login failed";
+}
 
 export default function GithubCallback() {
   const navigate = useNavigate();
@@ -44,6 +60,7 @@ export default function GithubCallback() {
       } catch (error) {
         console.error(error);
         console.error("GitHub login failed", error);
+        toast.error(getGithubErrorMessage(error));
         sessionStorage.removeItem("github_oauth_state");
         sessionStorage.removeItem("post_login_redirect");
         navigate("/login", { replace: true });
